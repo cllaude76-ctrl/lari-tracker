@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0A2457">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#0A2457;--blue:#1D5FE0;--sky:#5BB6FF;--ice:#EEF5FF;--line:#D6E4FA;--white:#fff;--mut:#5B6F94;--up:#0FA968;--dn:#E5484D}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--ice);color:var(--navy)}
+h1,h2,.num{font-family:Sora,sans-serif}
+.hero{position:relative;overflow:hidden;color:#fff;padding:28px 20px 84px;
+  background:linear-gradient(135deg,#0A2457 0%,#1D5FE0 70%,#5BB6FF 130%)}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.08);animation:float 9s ease-in-out infinite}
+.hero:before{width:260px;height:260px;right:-60px;top:-90px}
+.hero:after{width:160px;height:160px;left:-40px;bottom:-60px;animation-delay:-4s}
+@keyframes float{50%{transform:translateY(18px) scale(1.06)}}
+.in{max-width:980px;margin:auto;position:relative;z-index:1}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+h1{margin:0;font-size:22px;font-weight:800;display:flex;gap:10px;align-items:center}
+.runner{display:inline-block;animation:run 1.1s ease-in-out infinite alternate}
+@keyframes run{to{transform:translateX(8px) rotate(-6deg)}}
+.pill{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:99px;padding:7px 14px;font:600 13px 'Plus Jakarta Sans';cursor:pointer;transition:.2s}
+.pill:hover{background:#fff;color:var(--blue)}
+.big{margin-top:26px;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.big .num{font-size:clamp(44px,9vw,76px);font-weight:800;line-height:1}
+.big p{margin:0 0 6px;opacity:.85;max-width:280px;font-size:14px}
+#spark{position:absolute;right:0;bottom:0;width:min(520px,70%);height:110px;opacity:.9}
+#spark path{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 2.2s .3s ease forwards}
+#spark .fill{fill:url(#sg);stroke:none;stroke-dasharray:none;opacity:0;animation:fade 1s 1.8s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}@keyframes fade{to{opacity:1}}
+.main{max-width:980px;margin:-56px auto 40px;padding:0 16px;position:relative;z-index:2}
+.card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px -18px rgba(10,36,87,.35)}
+.card h2{margin:0 0 4px;font-size:16px}.sub{color:var(--mut);font-size:13px;margin:0 0 12px}
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{background:var(--ice);border-radius:14px;padding:14px;transition:transform .25s}
+.kpi:hover{transform:translateY(-4px)}
+.kpi span{font-size:12px;color:var(--mut)}.kpi b{display:block;font:800 24px Sora;margin-top:4px}
+.up{color:var(--up)}.dn{color:var(--dn)}
+.form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label{font-size:12px;color:var(--mut);font-weight:600;display:block}
+input,textarea{width:100%;margin-top:4px;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--navy);font:inherit;transition:.2s}
+input:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px rgba(29,95,224,.15)}
+.btn{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--blue),#3D8BFF);color:#fff;border:0;border-radius:12px;padding:12px 20px;font:600 14px 'Plus Jakarta Sans';cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 8px 18px -8px var(--blue)}
+.btn:hover{transform:translateY(-2px)}.btn:active{transform:scale(.97)}.btn:disabled{opacity:.55;cursor:wait}
+.btn.ghost{background:var(--ice);color:var(--blue);box-shadow:none;border:1.5px solid var(--line)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.msg{font-size:13px;color:var(--mut)}
+#ai{margin-top:14px;line-height:1.65;white-space:pre-wrap;background:var(--ice);border-left:4px solid var(--blue);border-radius:12px;padding:0 14px;max-height:0;overflow:hidden;transition:max-height .6s ease,padding .3s}
+#ai.show{max-height:2000px;padding:14px}
+.dots span{display:inline-block;width:8px;height:8px;margin-right:4px;border-radius:50%;background:var(--blue);animation:b 1s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes b{50%{transform:translateY(-7px);opacity:.4}}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,120px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;transition:transform .45s cubic-bezier(.2,1.4,.4,1);z-index:30}
+#toast.show{transform:translate(-50%,0)}
+canvas{max-height:300px}
+.btn.white{background:#fff;color:var(--blue);box-shadow:none}
+.cb{margin-top:12px;padding:12px 14px;border-radius:12px;background:#FFECEC;border-left:4px solid var(--dn);font-size:14px;line-height:1.5}
+.cb.ok{background:#E8F8F0;border-color:var(--up)}
+#gv{position:fixed;inset:0;z-index:20;display:none;overflow:auto;color:#fff;background:linear-gradient(160deg,#0A2457,#1D5FE0)}
+#gv.on{display:block;animation:fi .35s}@keyframes fi{from{opacity:0;transform:scale(1.03)}}
+.gi{max-width:520px;margin:auto;padding:20px;text-align:center}
+.gt{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.gn{font:800 clamp(64px,24vw,120px) Sora;line-height:1.15;margin:6px 0}
+.gi h2{margin:14px 0 4px;font-size:20px}#gtip{opacity:.8;min-height:20px;font-size:14px}
+.gi input[type=number]{text-align:center;font-size:18px;margin:10px 0}
+.say{margin:16px 0;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.15);min-height:58px;line-height:1.5;text-align:left;font-weight:500}
+.say.mad{background:#E5484D;animation:shake .45s}@keyframes shake{25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+.gi .row{justify-content:center}
+select{width:100%;margin-top:4px;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--navy);font:inherit}
+.lv{display:flex;align-items:center;gap:12px;margin-top:20px;max-width:440px;font-size:13px}
+.bar{flex:1;height:10px;background:rgba(255,255,255,.22);border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#fff;border-radius:9px;transition:width 1.3s cubic-bezier(.2,.8,.2,1)}
+.card .bar{background:var(--ice)}.card .bar i{background:linear-gradient(90deg,var(--blue),var(--sky))}
+.m{display:flex;gap:12px;align-items:center;padding:13px;border:1.5px solid var(--line);border-radius:14px;margin-top:10px;cursor:pointer;transition:.25s}
+.m:hover{border-color:var(--blue)}.m p{margin:0;flex:1;font-size:14px;line-height:1.5}.m b{color:var(--blue);font-size:13px}
+.ck{width:28px;height:28px;flex:none;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:transparent;font-weight:800;transition:.3s}
+.m.ok{background:var(--ice);border-color:var(--blue)}.m.ok p{opacity:.6}
+.m.ok .ck{background:var(--blue);border-color:var(--blue);color:#fff;animation:pop .45s}
+@keyframes pop{50%{transform:scale(1.4)}}
+#lg{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:linear-gradient(160deg,#0A2457,#1D5FE0)}
+.lgc{background:#fff;border-radius:20px;padding:22px;width:min(400px,100%)}.lgc h2{margin:0 0 4px;font-size:20px}
+.hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#spark path{stroke-dashoffset:0}#spark .fill{opacity:1}}
+</style>
+</head>
+<body>
+<div id="lg"><div class="lgc"><h2>🏃 Lari Tracker</h2><p class="sub">Masuk supaya data sama di HP dan laptop.</p>
+  <label>Email<input type="email" id="le" autocomplete="email"></label>
+  <label style="margin-top:10px">Kata sandi (minimal 6 huruf)<input type="password" id="lp" autocomplete="current-password"></label>
+  <div class="row"><button class="btn" onclick="masuk()">Masuk</button><button class="btn ghost" onclick="daftar()">Daftar</button></div>
+  <p class="msg" id="lm"></p></div></div>
+<header class="hero"><div class="in">
+  <div class="top"><h1><span class="runner">🏃</span>Lari Tracker</h1>
+  <button class="pill" onclick="keluar()">Keluar</button></div>
+  <div class="big"><div class="num" id="heroNum">0%</div>
+  <p id="heroTxt">Tambahkan lari pertama Anda untuk melihat tren performa.</p></div>
+  <div class="lv"><b id="lvT">Level 1</b><div class="bar"><i id="lvB"></i></div><span id="lvP">0 poin</span></div>
+  <svg id="spark" viewBox="0 0 520 110" preserveAspectRatio="none"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs><path class="fill" id="sf"/><path id="sl"/></svg>
+</div></header>
+
+<main class="main">
+  <section class="card"><div class="kpis" id="kpi"></div></section>
+
+  <section class="card"><div class="hd"><h2 id="pgT">Program 30 hari</h2><span class="msg" id="pgS"></span></div>
+    <div class="bar" style="margin-top:8px"><i id="pgB"></i></div><div id="mis"></div></section>
+
+  <section class="card"><h2>Grafik performa</h2>
+    <p class="sub">Kecepatan tiap lari. Hijau berarti naik dari lari sebelumnya, merah berarti turun. Garis putus-putus adalah tren 5 lari.</p>
+    <canvas id="c1"></canvas></section>
+
+  <section class="card"><h2>Jarak per minggu</h2><p class="sub">Dalam kilometer.</p><canvas id="c2"></canvas></section>
+
+  <section class="card"><h2>Catat lari</h2><p class="sub">Isi setelah lari, atau impor file CSV dari Strava.</p>
+    <div class="form">
+      <div><label>Tanggal<input type="date" id="tgl"></label></div>
+      <div><label>Jarak (km)<input type="number" step="0.01" id="km" placeholder="5.2"></label></div>
+      <div><label>Durasi (menit)<input type="number" step="0.1" id="mnt" placeholder="32"></label></div>
+      <div><label>Detak jantung rata-rata<input type="number" id="hr" placeholder="150"></label></div>
+    </div>
+    <label style="margin-top:10px">Catatan<input id="cat" placeholder="Kondisi tubuh, cuaca, atau nyeri yang terasa"></label>
+    <div class="row"><button class="btn" id="bsv" onclick="simpan()">Simpan lari</button>
+    <input type="file" id="csv" accept=".csv,text/csv" hidden onchange="impor(this)">
+    <button class="btn ghost" id="bi" onclick="$('csv').click()">Impor CSV Strava</button>
+    <span class="msg" id="m1"></span></div>
+  </section>
+
+  <section class="card"><h2>Catat hasil latihan</h2>
+    <p class="sub">Push up, sit up, dan pull up dihitung per sesi atau 1 menit. Skor SKD dari tryout.</p>
+    <div class="form">
+      <div><label>Jenis<select id="lj"><option value="pushup">Push up (jumlah)</option><option value="situp">Sit up (jumlah)</option><option value="pullup">Pull up (jumlah)</option><option value="renang">Renang (meter)</option><option value="sepeda">Sepeda (km)</option><option value="skd">Tryout SKD (skor)</option></select></label></div>
+      <div><label>Tanggal<input type="date" id="lt"></label></div>
+      <div><label>Hasil<input type="number" id="ln" placeholder="35"></label></div>
+      <div><label>Catatan<input id="lc" placeholder="Opsional"></label></div>
+    </div>
+    <div class="row"><button class="btn" id="bl" onclick="simpanL()">Simpan hasil</button><span class="msg" id="ml"></span></div>
+    <div class="kpis" id="tes" style="margin-top:14px"></div>
+    <canvas id="c3" style="margin-top:12px"></canvas>
+  </section>
+
+  <section class="card"><h2>Konsultasi kesehatan</h2>
+    <p class="sub">Analisis berdasarkan 15 lari terakhir Anda. Ini bukan pengganti dokter.</p>
+    <label>Profil singkat<input id="prof" placeholder="Usia, berat badan, riwayat cedera atau penyakit, target"></label>
+    <label style="margin-top:10px">Pertanyaan<textarea id="q" rows="3" placeholder="Contoh: lutut kanan nyeri setelah long run, boleh lanjut latihan?"></textarea></label>
+    <div class="row"><button class="btn" id="bq" onclick="tanya()">Tanya pelatih</button><button class="btn ghost" onclick="tanya('makan')">Saran pola makan</button><button class="btn ghost" onclick="tanya('skd')">Strategi SKD</button></div>
+    <div id="ai"></div>
+  </section>
+<section class="card"><h2>Reset</h2><p class="sub">Mulai ulang program menghapus centang misi. Hapus semua data mengosongkan lari, latihan, dan misi. Ketik RESET untuk mengonfirmasi.</p>
+    <input id="rc" placeholder="Ketik RESET">
+    <div class="row"><button class="btn ghost" onclick="mulai()">Mulai ulang program 30 hari</button><button class="btn" style="background:var(--dn)" onclick="hapus()">Hapus semua data</button><span class="msg" id="mr"></span></div></section>
+</main>
+<div id="gv"><div class="gi">
+  <div class="gt"><span id="gp"></span><label style="color:#fff"><input type="checkbox" id="vo" style="width:auto;margin:0 6px 0 0"> Suara pelatih</label><button class="pill" onclick="tutup()">Tutup</button></div>
+  <h2 id="gh"></h2><div class="gn" id="gn"></div><p id="gtip"></p>
+  <div id="gin"></div><div class="row" id="gb"></div>
+  <div class="say" id="gs"></div>
+  <button class="pill" onclick="nyeri()">Ada nyeri atau pusing</button>
+</div></div>
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://teutrvmvlgwiabgdlwvu.supabase.co';
+const SUPABASE_KEY='sb_publishable_NEZiDdcj61RenncsSRiqIg_5bCL-t7y';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let runs=[],LOGS=[],MIS=[],START=null,USER=null,ch1,ch2,first=true;
+const $=id=>document.getElementById(id),f=(n,d=1)=>Number(n).toFixed(d);
+$('tgl').value=today();$('lt').value=today();
+
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600)}
+const addDays=(s,n)=>{const d=new Date(s+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
+const ymdLocal=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+/* ---------- Masuk / daftar ---------- */
+function pesanAuth(e){
+  const m=(e&&e.message)||String(e);
+  if(/Invalid login/i.test(m))return 'Email atau kata sandi salah.';
+  if(/already registered/i.test(m))return 'Email ini sudah terdaftar. Klik Masuk.';
+  if(/at least 6/i.test(m))return 'Kata sandi minimal 6 huruf.';
+  if(/Email not confirmed/i.test(m))return 'Email belum dikonfirmasi. Buka email Anda dan klik tautannya.';
+  return m;
+}
+async function masuk(){
+  $('lm').textContent='Memeriksa...';
+  const {error}=await db.auth.signInWithPassword({email:$('le').value.trim(),password:$('lp').value});
+  $('lm').textContent=error?pesanAuth(error):'';
+}
+async function daftar(){
+  $('lm').textContent='Mendaftar...';
+  const {data,error}=await db.auth.signUp({email:$('le').value.trim(),password:$('lp').value});
+  if(error){$('lm').textContent=pesanAuth(error);return}
+  $('lm').textContent=data.session?'':'Berhasil. Buka email Anda dan klik tautan konfirmasi, lalu kembali ke sini dan klik Masuk.';
+}
+async function keluar(){await db.auth.signOut();location.reload()}
+db.auth.onAuthStateChange((ev,s)=>{
+  USER=s?s.user:null;
+  $('lg').style.display=USER?'none':'grid';
+  if(USER)setTimeout(()=>refresh().catch(e=>toast(e.message)),0);
+});
+
+/* ---------- Data ---------- */
+async function refresh(){
+  const [r,l,m,p]=await Promise.all([
+    db.from('lari').select('*').order('tanggal'),
+    db.from('latihan').select('*').order('tanggal'),
+    db.from('misi').select('*'),
+    db.from('profil').select('mulai').maybeSingle()]);
+  for(const x of [r,l,m,p])if(x.error)throw x.error;
+  runs=r.data.map(x=>{const km=Number(x.km),min=Number(x.menit);
+    return {tanggal:x.tanggal,km,menit:min,pace:km?min/km:0,speed:min?km/(min/60):0,hr:x.hr||'',catatan:x.catatan||'',sumber:x.sumber}});
+  LOGS=l.data.map(x=>({tanggal:x.tanggal,jenis:x.jenis,nilai:Number(x.nilai),catatan:x.catatan||''}));
+  MIS=m.data;START=p.data?p.data.mulai:null;
+  draw();st=buildState();drawState();
+}
+async function load(){try{await refresh()}catch(e){toast(e.message)}}
+
+async function addRun(d){
+  const km=Number(d.km),menit=Number(d.menit);
+  if(!d.tanggal||!(km>0)||!(menit>0))throw new Error('Tanggal, jarak, dan durasi wajib diisi dengan benar.');
+  const {error}=await db.from('lari').insert({user_id:USER.id,tanggal:d.tanggal,km,menit,hr:d.hr?Number(d.hr):null,catatan:d.catatan||null});
+  if(error)throw error;
+}
+async function addLatihan(d){
+  const n=Number(d.nilai);
+  if(['pushup','situp','pullup','skd','renang','sepeda'].indexOf(d.jenis)<0||!d.tanggal||!(n>0))throw new Error('Isi jenis, tanggal, dan hasil dengan benar.');
+  const {error}=await db.from('latihan').insert({user_id:USER.id,tanggal:d.tanggal,jenis:d.jenis,nilai:n,catatan:d.catatan||null});
+  if(error)throw error;
+}
+async function selesaiMisi(id){
+  const m=st.missions.find(x=>x.id===id);
+  if(!m)throw new Error('Misi ini bukan untuk hari ini.');
+  const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:id,poin:10});
+  if(error&&error.code!=='23505')throw error;
+}
+async function mulaiProgram(){
+  let e=(await db.from('misi').delete().neq('id',0)).error;if(e)throw e;
+  e=(await db.from('profil').upsert({user_id:USER.id,mulai:today()},{onConflict:'user_id'})).error;if(e)throw e;
+}
+async function resetSemua(k){
+  if(k!=='RESET')throw new Error('Ketik RESET untuk mengonfirmasi.');
+  for(const t of ['lari','latihan','misi']){const e=(await db.from(t).delete().neq('id',0)).error;if(e)throw e}
+  const e=(await db.from('profil').delete().neq('user_id','00000000-0000-0000-0000-000000000000')).error;if(e)throw e;
+}
+
+/* ---------- Rencana program 30 hari ---------- */
+const T_=(t,sec,tip,bebas)=>({k:'timer',t:t,sec:Math.round(sec),tip:tip||'',bebas:!!bebas});
+const R_=(t,reps,tip)=>({k:'reps',t:t,reps:reps,tip:tip||''});
+const Z_=sec=>({k:'rest',t:'Istirahat',sec:sec,tip:'Atur napas, minum seperlunya.'});
+const I_=(kind,q,target)=>({k:'input',kind:kind,t:q,target:target||0});
+function sets_(nama,n,reps,rest,tip){
+  const a=[];
+  for(let i=1;i<=n;i++){a.push(R_(nama+' set '+i+' dari '+n,reps,tip));if(i<n)a.push(Z_(rest))}
+  return a;
+}
+function plan_(day){
+  const w=Math.ceil(day/7),k=(day-1)%7,skd=['TWK','TIU','TKP'][(day-1)%3];
+  const pem=T_('Pemanasan: jalan di tempat, putar sendi, peregangan',300,'Jangan lewati pemanasan. Cedera itu menghambat targetmu.');
+  const pend=T_('Pendinginan: jalan pelan dan peregangan',180,'');
+  let tf,sf;
+  if(day%7===0){
+    tf='Tes mingguan: lari 2,4 km secepat mungkin, lalu push up dan sit up masing-masing 1 menit.';
+    sf=[pem,T_('Lari 2,4 km secepat mungkin',1200,'Tekan Selesai saat sudah 2,4 km.',true),I_('lari','Berapa km yang kamu tempuh? (2.4 jika tuntas)',2.4),Z_(180),
+        T_('Push up 1 menit',60,'Badan lurus, dada hampir menyentuh lantai.'),I_('pushup','Jumlah push up yang sah'),Z_(90),
+        T_('Sit up 1 menit',60,'Punggung menyentuh lantai tiap ulangan.'),I_('situp','Jumlah sit up yang sah')];
+  }else if(k===0||k===3){
+    const km=2+0.5*w+(k===3?0.5:0);
+    tf='Lari santai '+km+' km dengan napas teratur.';
+    sf=[pem,T_('Lari '+km+' km, tempo masih bisa bicara pendek',km*7*60,'Jangan mulai terlalu cepat. Selesaikan jaraknya.',true),I_('lari','Berapa km yang kamu tempuh?',km),pend];
+  }else if(k===1){
+    tf='Push up 3 x '+(13+2*w)+' dan sit up 3 x '+(12+3*w)+', istirahat 60 detik antar set.';
+    sf=[pem].concat(sets_('Push up',3,13+2*w,60,'Badan lurus, turun sampai dada hampir menyentuh lantai.'),[Z_(90)],
+                    sets_('Sit up',3,12+3*w,60,'Punggung menyentuh lantai, jangan menarik leher.'));
+  }else if(k===4){
+    tf='Pull up 4 x '+(2+w)+' (belum kuat: turun pelan 5 detik) dan push up 2 x '+(13+2*w)+'.';
+    sf=[pem].concat(sets_('Pull up',4,2+w,90,'Dagu melewati palang. Belum kuat? Naik dengan lompat, turun pelan.'),[Z_(90)],
+                    sets_('Push up',2,13+2*w,60,'Badan lurus.'));
+  }else if(k===5){
+    if(w%2){
+      const m=10+5*w;
+      tf='Renang santai '+m+' menit, boleh berhenti di tepi kolam.';
+      sf=[pem,T_('Renang '+m+' menit',m*60,'Jangan berenang sendirian tanpa pengawas.'),I_('renang','Perkiraan berapa meter yang kamu renangi?'),pend];
+    }else{
+      const m=20+5*w;
+      tf='Bersepeda santai '+m+' menit.';
+      sf=[pem,T_('Bersepeda '+m+' menit',m*60,'Pakai helm dan patuhi lalu lintas.'),I_('sepeda','Berapa km yang kamu tempuh?'),pend];
+    }
+  }else{
+    tf='Jalan cepat atau peregangan 30 menit untuk pemulihan.';
+    sf=[T_('Jalan cepat atau peregangan',1800,'Ini hari pemulihan, bukan hari libur.')];
+  }
+  let s,ss;
+  if(day%7===0){
+    s='Tryout SKD lengkap (110 soal, 100 menit) di aplikasi tryout pilihanmu, lalu catat skornya.';
+    ss=[T_('Tryout SKD lengkap',6000,'Tanpa buka catatan. Waktu ketat seperti tes asli.',true),I_('skd','Skor total yang kamu dapat')];
+  }else{
+    s='Latihan soal '+skd+' 30 menit, lalu bahas soal yang salah.';
+    ss=[T_('Latihan soal '+skd+' 30 menit',1800,'Tanpa buka catatan. Tandai soal yang ragu.'),I_('benar','Berapa benar dari 30 soal?')];
+  }
+  return [{id:day+'-f',teks:tf,sesi:sf},{id:day+'-s',teks:s,sesi:ss},
+          {id:day+'-p',teks:'Minum air minimal 2 liter, tidur 7 jam, makan 3 kali dengan protein.',sesi:null}];
+}
+
+function buildState(){
+  const done=MIS.map(r=>String(r.misi_id)),t0=today();
+  const day=START?Math.round((new Date(t0)-new Date(START))/864e5)+1:0;
+  const missions=day>=1&&day<=30?plan_(day).map(m=>({id:m.id,teks:m.teks,sesi:m.sesi,done:done.includes(m.id)})):[];
+  const pts=MIS.reduce((a,r)=>a+Number(r.poin),0)+runs.reduce((a,r)=>a+5+Math.round(r.km*2),0)+LOGS.reduce((a,l)=>a+(l.jenis==='skd'?10:5),0);
+  const lvl=Math.floor(Math.sqrt(pts/25))+1;
+  const days={};MIS.forEach(r=>days[r.tanggal]=1);
+  let streak=0,t=days[t0]?t0:addDays(t0,-1);
+  while(days[t]){streak++;t=addDays(t,-1)}
+  return {day:day,missions:missions,points:pts,level:lvl,from:25*(lvl-1)*(lvl-1),next:25*lvl*lvl,streak:streak,logs:LOGS.slice(-60),
+          kemarin:day>1?done.filter(i=>i.indexOf((day-1)+'-')===0).length:-1};
+}
+
+/* ---------- CSV ---------- */
+function parseCsv(t){
+  const rows=[];let r=[],c='',q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];
+    if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}
+    else if(ch==='"')q=true;
+    else if(ch===','){r.push(c);c=''}
+    else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';rows.push(r);r=[]}
+    else c+=ch}
+  if(c!==''||r.length){r.push(c);rows.push(r)}
+  return rows.filter(x=>x.length>1||x[0]!=='');
+}
+
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+async function simpan(){
+  $('bsv').disabled=true;$('m1').textContent='Menyimpan...';
+  try{
+    await addRun({tanggal:$('tgl').value,km:$('km').value,menit:$('mnt').value,hr:$('hr').value,catatan:$('cat').value});
+    ['km','mnt','hr','cat'].forEach(i=>$(i).value='');$('m1').textContent='';
+    await refresh();toast('Lari tersimpan ✓');
+  }catch(e){$('m1').textContent=e.message}
+  $('bsv').disabled=false;
+}
+function impor(inp){
+  const file=inp.files[0];if(!file)return;
+  $('bi').disabled=true;$('m1').textContent='Membaca '+file.name+'...';
+  const rd=new FileReader();
+  rd.onload=async()=>{
+    try{
+      const rows=parseCsv(rd.result);
+      if(rows.length<2)throw new Error('File CSV kosong.');
+      const h=rows[0].map(x=>String(x).trim().toLowerCase());
+      const col=n=>h.indexOf(n);
+      const iId=col('activity id'),iDate=col('activity date'),iName=col('activity name'),iType=col('activity type'),
+            iMove=col('moving time'),iEl=col('elapsed time'),iDist=col('distance'),iHr=col('average heart rate');
+      if(iId<0||iDate<0||iType<0||iDist<0)throw new Error('Kolom tidak dikenali. Pastikan file adalah activities.csv dari arsip Strava (bahasa Inggris).');
+      const out=[];let skipped=0;
+      rows.slice(1).forEach(r=>{
+        if(!/^run$|lari/i.test(String(r[iType]).trim()))return;
+        const id=String(r[iId]).trim();if(!id)return;
+        let km=parseFloat(String(r[iDist]).replace(',','.'));if(km>500)km/=1000;
+        const sec=parseFloat(r[iMove>=0?iMove:iEl])||parseFloat(r[iEl]);
+        const d=new Date(r[iDate]);
+        if(!(km>0)||!(sec>0)||isNaN(d)){skipped++;return}
+        out.push({user_id:USER.id,tanggal:ymdLocal(d),km:+km.toFixed(2),menit:+(sec/60).toFixed(1),
+          hr:iHr>=0&&r[iHr]?Math.round(parseFloat(r[iHr])):null,catatan:r[iName]||null,sumber:'strava-csv',strava_id:id});
+      });
+      let added=0;
+      for(let i=0;i<out.length;i+=200){
+        const {data,error}=await db.from('lari').upsert(out.slice(i,i+200),{onConflict:'user_id,strava_id',ignoreDuplicates:true}).select('id');
+        if(error)throw error;added+=data.length;
+      }
+      $('m1').textContent='';await refresh();
+      toast(added+' lari diimpor'+(skipped?', '+skipped+' dilewati':''));
+    }catch(e){$('m1').textContent=e.message}
+    $('bi').disabled=false;inp.value='';
+  };
+  rd.readAsText(file);
+}
+function tanya(mode){
+  const a=$('ai');a.classList.add('show');
+  a.textContent='Pelatih AI akan aktif setelah tahap 5 (penyambungan kunci AI yang aman). Pelatih tegas di misi dan latihan terpandu sudah bisa dipakai sekarang.';
+}
+
+let st=null,ch3;
+function drawState(){
+  $('lvT').textContent='Level '+st.level;$('lvP').textContent=st.points+' poin';
+  $('lvB').style.width=Math.min(100,(st.points-st.from)/(st.next-st.from)*100)+'%';
+  const d=st.day,box=$('mis');
+  $('pgB').style.width=Math.min(100,Math.max(0,d)/30*100)+'%';
+  if(d<1||d>30){
+    $('pgT').textContent='Program 30 hari';$('pgS').textContent='';
+    box.innerHTML='<p class="sub" style="margin-top:12px">'+(d>30?'Program 30 hari selesai. Mulai putaran baru untuk lanjut berlatih.':'Satu bulan latihan lari, push up, sit up, dan SKD dengan 3 misi tiap hari.')+'</p><button class="btn" onclick="mulai()">Mulai program hari ini</button>';
+  }else{
+    $('pgT').textContent='Hari '+d+' dari 30';$('pgS').textContent=st.streak?('🔥 '+st.streak+' hari beruntun'):'Selesaikan misi untuk mulai rangkaian';
+    box.innerHTML=banner()+st.missions.map(m=>`<div class="m ${m.done?'ok':''}" onclick="${m.sesi&&!m.done?`mulaiSesi('${m.id}')`:m.sesi?'':`selesai('${m.id}')`}"><span class="ck">✓</span><p>${m.teks}</p><b>${m.sesi&&!m.done?'▶ Mulai':'+10'}</b></div>`).join('');
+  }
+  const L=st.logs,best=j=>{const v=L.filter(l=>l.jenis===j).map(l=>l.nilai);return v.length?Math.max(...v):'-'};
+  const sk=L.filter(l=>l.jenis==='skd');
+  $('tes').innerHTML=`<div class="kpi"><span>Push up terbaik</span><b>${best('pushup')}</b></div><div class="kpi"><span>Sit up terbaik</span><b>${best('situp')}</b></div><div class="kpi"><span>Pull up terbaik</span><b>${best('pullup')}</b></div><div class="kpi"><span>Skor SKD terakhir</span><b>${sk.length?sk[sk.length-1].nilai:'-'}</b></div>`;
+  const ds=[...new Set(L.filter(l=>['pushup','situp','pullup'].includes(l.jenis)).map(l=>l.tanggal))].sort();
+  const line=(j,n,c)=>({label:n,borderColor:c,backgroundColor:c,borderWidth:3,tension:.3,spanGaps:true,pointRadius:4,data:ds.map(t=>{const x=L.find(l=>l.tanggal===t&&l.jenis===j);return x?x.nilai:null})});
+  if(ch3)ch3.destroy();
+  ch3=new Chart($('c3'),{type:'line',data:{labels:ds,datasets:[line('pushup','Push up','#1D5FE0'),line('situp','Sit up','#5BB6FF'),line('pullup','Pull up','#0A2457')]},
+    options:{animation:{duration:1400,easing:'easeOutQuart'},plugins:{legend:{labels:{usePointStyle:true}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#E6EEFB'}}}}});
+}
+function banner(){
+  const k=st.kemarin;if(k<0)return '';
+  return k>=3?'<div class="cb ok">Kemarin tuntas 3 dari 3. Pertahankan, jangan kendor.</div>'
+    :'<div class="cb">Kemarin kamu cuma menyelesaikan '+k+' dari 3 misi. Itu bukan disiplin! Hari ini tidak ada alasan.</div>';
+}
+const SAY={
+ start:['Dengar. Hari ini kita bekerja, bukan mengobrol. Siap?','Fokus. Kerjakan semua yang kuminta, tanpa tawar-menawar.'],
+ early:['Belum waktunya! Kamu mau curang pada dirimu sendiri?','Masih ada waktu! Lanjut, jangan cari alasan!','Berhenti sekarang? Itu bukan yang kamu janjikan pada dirimu!'],
+ skip:['Lewati? Tes asli tidak bisa dilewati. Kerjakan!','Alasan lagi? Tekan sekali lagi kalau kamu memang mau menyerah.'],
+ low:['Cuma segitu? Targetmu jauh di atas itu. Besok harus lebih!','Itu di bawah target. Jangan puas dengan setengah usaha!'],
+ mid:['Hampir. Jaga form, besok lampaui targetnya.'],
+ good:['Bagus. Pertahankan form seperti itu.','Nah, begitu. Lanjut!'],
+ late:['Kamu melamun? Berdiri dan mulai sekarang!','Waktu jalan terus! Kerjakan!'],
+ done:['Selesai. Itu baru kerja. Besok lebih baik lagi.'],
+ pain:['Stop sekarang. Jangan dipaksa. Duduk, tarik napas, minum air. Kalau nyeri atau pusing bertahan, periksakan ke dokter.']
+};
+let S=null;
+function pick(k){const a=SAY[k];S.n=(S.n||0)+1;return a[S.n%a.length]}
+function say(t,mad){
+  const e=$('gs');e.textContent=t;e.className='say'+(mad?' mad':'');
+  if(mad&&navigator.vibrate)navigator.vibrate(200);
+  if($('vo').checked&&window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='id-ID';speechSynthesis.speak(u)}
+}
+function today(){return new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function mulaiSesi(id){
+  const m=st.missions.find(x=>x.id===id);if(!m||!m.sesi)return;
+  S={m:m,i:-1,ang:0,n:0,el:0,rem:0,last:0};$('gv').classList.add('on');say(pick('start'));nextS(true);
+}
+function stopT(){if(S)clearInterval(S.tm)}
+function nextS(keep){
+  stopT();S.i++;const s=S.m.sesi[S.i];if(!s)return finS();
+  S.s=s;S.el=0;S.rem=s.sec||0;S.skip=false;
+  if(s.k!=='input')S.tm=setInterval(tick,1000);
+  viewS();
+  if(!keep)say(s.k==='rest'?'Atur napas. Jangan duduk terlalu lama.':s.k==='timer'?'Mulai. Jangan berhenti sebelum waktunya.':s.k==='reps'?'Kerjakan '+s.reps+' ulangan dengan form yang benar.':'Isi dengan jujur.');
+}
+function viewS(){
+  const s=S.s;$('gp').textContent=(S.i+1)+' / '+S.m.sesi.length;
+  $('gh').textContent=s.t;$('gtip').textContent=s.tip||'';$('gin').innerHTML='';
+  if(s.k==='reps'){$('gn').textContent=s.reps+'×';$('gin').innerHTML='<input type="number" id="gv1" placeholder="Jumlah yang berhasil">';$('gb').innerHTML='<button class="btn white" onclick="repsOk()">Catat set</button>'}
+  else if(s.k==='input'){$('gn').textContent='✎';$('gin').innerHTML='<input type="number" step="0.01" id="gv1" placeholder="Isi angkanya">';$('gb').innerHTML='<button class="btn white" onclick="inputOk()">Simpan</button><button class="pill" onclick="nextS()">Tidak diukur</button>'}
+  else{disp();$('gb').innerHTML='<button class="btn white" onclick="doneT()">'+(s.k==='rest'?'Lanjut sekarang':'Selesai')+'</button><button class="pill" id="gsk" onclick="skipT()">Lewati</button>'}
+}
+function disp(){const r=Math.max(0,S.rem);$('gn').textContent=String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0')}
+function tick(){
+  const s=S.s;S.el++;
+  if(s.k==='reps'){if(S.el%60===0)say(pick('late'),true);return}
+  S.rem--;disp();
+  if(S.rem<=0){if(s.k==='timer')S.last=S.el;say(s.k==='rest'?'Istirahat habis. Mulai!':'Waktu habis.');nextS(true)}
+}
+function doneT(){
+  const s=S.s;
+  if(s.k==='timer'&&!s.bebas&&S.el<s.sec*0.8){S.ang++;say(pick('early'),true);return}
+  if(s.k==='timer')S.last=S.el;
+  nextS();
+}
+function skipT(){
+  if(!S.skip){S.skip=true;S.ang++;say(pick('skip'),true);$('gsk').textContent='Tetap lewati';return}
+  nextS();
+}
+function repsOk(){
+  const raw=$('gv1').value;if(raw==='')return;
+  const r=Number(raw)/S.s.reps;
+  if(r<0.7){S.ang++;say(pick('low'),true)}else if(r<1)say(pick('mid'));else say(pick('good'));
+  nextS(true);
+}
+function inputOk(){
+  const s=S.s,v=Number($('gv1').value);if(!(v>0))return;
+  let k='good',mad=false;
+  if(s.kind==='lari'){
+    addRun({tanggal:today(),km:v,menit:Math.max(1,Math.round(S.last/60)),hr:'',catatan:'Latihan terpandu'}).then(load).catch(e=>toast(e.message));
+    if(s.target&&v<s.target*0.8){k='low';mad=true}
+  }else if(s.kind==='benar'){
+    if(v<15){k='low';mad=true}else if(v<24)k='mid';
+  }else addLatihan({jenis:s.kind,tanggal:today(),nilai:v,catatan:'Latihan terpandu'}).then(load).catch(e=>toast(e.message));
+  if(mad)S.ang++;
+  say(pick(k),mad);nextS(true);
+}
+function finS(){
+  stopT();$('gn').textContent='✓';$('gh').textContent='Sesi selesai';$('gtip').textContent='';$('gin').innerHTML='';$('gb').innerHTML='';
+  const mad=S.ang>=3,mid=S.m.id;say(mad?'Selesai, tapi kamu terlalu banyak alasan hari ini. Besok tidak ada kompromi.':pick('done'),mad);
+  selesaiMisi(mid).then(()=>{load();toast('+10 poin. Misi selesai ✓')}).catch(e=>toast(e.message));
+  setTimeout(tutup,5000);
+}
+function nyeri(){
+  if(!S)return;stopT();say(pick('pain'));$('gb').innerHTML='<button class="btn white" onclick="tutup()">Akhiri sesi</button>';$('gin').innerHTML='';
+}
+function tutup(){stopT();if(window.speechSynthesis)speechSynthesis.cancel();$('gv').classList.remove('on');S=null}
+function selesai(id){
+  const m=st.missions.find(x=>x.id===id);if(!m||m.done)return;
+  m.done=true;drawState();
+  selesaiMisi(id).then(()=>{load();toast('+10 poin. Misi selesai ✓')}).catch(e=>{m.done=false;drawState();toast(e.message)});
+}
+async function simpanL(){
+  $('bl').disabled=true;$('ml').textContent='Menyimpan...';
+  try{
+    await addLatihan({jenis:$('lj').value,tanggal:$('lt').value,nilai:$('ln').value,catatan:$('lc').value});
+    $('ln').value='';$('lc').value='';$('ml').textContent='';await refresh();toast('Hasil tersimpan ✓');
+  }catch(e){$('ml').textContent=e.message}
+  $('bl').disabled=false;
+}
+async function mulai(){
+  if(st&&st.day>=1&&st.day<=30&&$('rc').value!=='RESET'){$('mr').textContent='Program sedang berjalan. Ketik RESET di kolom untuk mengulang.';return}
+  try{await mulaiProgram();$('mr').textContent='';$('rc').value='';await refresh();toast('Program dimulai. Semangat!')}
+  catch(e){toast(e.message)}
+}
+async function hapus(){
+  try{await resetSemua($('rc').value);$('mr').textContent='';$('rc').value='';first=true;await refresh();toast('Semua data dihapus')}
+  catch(e){$('mr').textContent=e.message}
+}
+function ma(a,n){return a.map((_,i)=>{const s=a.slice(Math.max(0,i-n+1),i+1);return s.reduce((x,y)=>x+y,0)/s.length})}
+function weekKey(d){const t=new Date(d);t.setDate(t.getDate()-(t.getDay()+6)%7);return t.toISOString().slice(0,10)}
+function countUp(el,to,dec,pre,suf){
+  const t0=performance.now(),d=1200;
+  (function s(t){const p=Math.min(1,(t-t0)/d),e=1-Math.pow(1-p,3);el.textContent=pre+f(to*e,dec)+suf;if(p<1)requestAnimationFrame(s)})(t0);
+}
+function spark(v){
+  if(v.length<2)return;
+  const mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1;
+  const pts=v.map((y,i)=>[i/(v.length-1)*520,100-((y-mn)/r)*80]);
+  const d=pts.map((p,i)=>(i?'L':'M')+f(p[0])+' '+f(p[1])).join(' ');
+  $('sl').setAttribute('d',d);$('sf').setAttribute('d',d+' L520 110 L0 110Z');
+}
+
+function draw(){
+  if(!runs.length){$('kpi').innerHTML='<span class="msg">Belum ada data. Catat lari pertama atau impor dari Strava.</span>';
+    [ch1,ch2].forEach(c=>c&&c.destroy());ch1=ch2=null;$('heroNum').textContent='0%';$('sl').setAttribute('d','');$('sf').setAttribute('d','');return}
+  const sp=runs.map(r=>r.speed),m5=ma(sp,5);
+  const last=sp[sp.length-1],prev=sp.length>1?sp[sp.length-2]:last;
+  const base=m5.length>5?m5[m5.length-6]:sp[0],chg=(m5[m5.length-1]-base)/base*100;
+  const tot=runs.reduce((a,r)=>a+r.km,0),b5=runs.filter(r=>r.km>=5).map(r=>r.pace),best=b5.length?Math.min(...b5):null;
+  const cls=v=>v>=0?'up':'dn',arr=v=>(v>=0?'▲ +':'▼ ')+f(v)+'%';
+
+  $('kpi').innerHTML=
+   `<div class="kpi"><span>Performa terakhir</span><b>${f(last)} km/j</b><span class="${cls(last-prev)}">${arr((last-prev)/prev*100)}</span></div>`+
+   `<div class="kpi"><span>Total jarak</span><b id="kt">0</b></div>`+
+   `<div class="kpi"><span>Jumlah lari</span><b id="kn">0</b></div>`+
+   `<div class="kpi"><span>Pace terbaik 5 km ke atas</span><b>${best?f(best,2)+' /km':'-'}</b></div>`;
+  countUp($('kt'),tot,1,'',' km');countUp($('kn'),runs.length,0,'','');
+
+  const h=$('heroNum');h.className='num '+'';
+  countUp(h,Math.abs(chg),1,chg>=0?'+':'−','%');
+  $('heroTxt').textContent=chg>=0?'Performa Anda naik dalam 5 lari terakhir. Pertahankan ritmenya.':'Performa turun dalam 5 lari terakhir. Cek pemulihan dan jam tidur.';
+  if(first){spark(m5);first=false}else{spark(m5)}
+
+  const labels=runs.map(r=>r.tanggal);
+  if(ch1)ch1.destroy();
+  const ctx=$('c1').getContext('2d'),g=ctx.createLinearGradient(0,0,0,300);
+  g.addColorStop(0,'rgba(29,95,224,.28)');g.addColorStop(1,'rgba(29,95,224,0)');
+  ch1=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Kecepatan (km/j)',data:sp,fill:true,backgroundColor:g,borderWidth:3,tension:.3,pointRadius:5,pointHoverRadius:8,
+     pointBackgroundColor:sp.map((v,i)=>i&&v<sp[i-1]?'#E5484D':'#0FA968'),pointBorderColor:'#fff',pointBorderWidth:2,
+     borderColor:'#1D5FE0',segment:{borderColor:c=>c.p1.parsed.y>=c.p0.parsed.y?'#0FA968':'#E5484D'}},
+    {label:'Tren 5 lari',data:m5,borderColor:'#0A2457',borderDash:[7,5],pointRadius:0,borderWidth:2,tension:.35}]},
+   options:{responsive:true,animation:{duration:1600,easing:'easeOutQuart'},interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{usePointStyle:true,font:{family:'Plus Jakarta Sans'}}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'#E6EEFB'}}}}});
+
+  const wk={};runs.forEach(r=>{const k=weekKey(r.tanggal);wk[k]=(wk[k]||0)+r.km});
+  const ks=Object.keys(wk).sort(),vs=ks.map(k=>+wk[k].toFixed(1));
+  if(ch2)ch2.destroy();
+  ch2=new Chart($('c2'),{type:'bar',data:{labels:ks,datasets:[{label:'km',data:vs,borderRadius:8,
+    backgroundColor:vs.map((v,i)=>i&&v<vs[i-1]?'#9DBFF5':'#1D5FE0')}]},
+    options:{animation:{duration:1200,delay:c=>c.dataIndex*80},plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:'#E6EEFB'}}}}});
+}
+</script>
+</body>
+</html>
