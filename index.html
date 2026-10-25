@@ -166,13 +166,13 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
       <label class="lbl">Catatan<input id="cat" placeholder="Kondisi tubuh, cuaca, atau nyeri yang terasa"></label>
       <div class="row"><button class="btn" id="bsv" onclick="simpan()">Simpan lari</button><span class="msg" id="m1"></span></div></section>
 
-    <section class="card"><h2>Catat hasil latihan</h2><p class="sub">Push up, sit up, dan pull up dihitung dalam 1 menit.</p>
+    <section class="card"><h2>Catat hasil latihan</h2><p class="sub">Isi hasil <b>maksimal dalam 1 menit</b>, bukan total beberapa set. Latihan di dalam misi tercatat otomatis.</p>
       <div class="form">
         <div><label>Jenis<select id="lj"><option value="pushup">Push up (kali)</option><option value="situp">Sit up (kali)</option><option value="pullup">Pull up (kali)</option><option value="lari12">Lari 12 menit (meter)</option><option value="shuttle">Shuttle run (detik)</option><option value="sepeda">Sepeda (km)</option><option value="renang">Renang (meter)</option></select></label></div>
         <div><label>Tanggal<input type="date" id="lt"></label></div>
         <div><label>Hasil<input type="number" step="0.1" id="ln" placeholder="35"></label></div>
       </div>
-      <div class="row"><button class="btn" id="bl" onclick="simpanL()">Simpan hasil</button><span class="msg" id="ml"></span></div></section>
+      <div class="row"><button class="btn" id="bl" onclick="simpanL()">Simpan hasil</button><span class="msg" id="ml"></span></div><div id="riw" style="margin-top:14px"></div></section>
   </section>
 
   <!-- KALENDER -->
@@ -218,6 +218,13 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
         <div><label>Jumlah soal<select id="qN"><option>10</option><option selected>20</option><option>30</option><option value="999">Semua</option></select></label></div>
       </div>
       <div class="row"><button class="btn" onclick="mulaiQuiz('latihan')">Latihan</button><button class="btn ghost" onclick="mulaiQuiz('ulang')">Ulang yang salah</button><button class="btn ghost" onclick="mulaiQuiz('tryout')">Tryout mini berwaktu</button></div>
+      <h3 class="lbl" style="margin-top:18px">Soal TIU tak terbatas</h3>
+      <p class="sub" style="margin:4px 0 8px">Angka dan cerita dibuat baru setiap kali latihan, jadi tidak bisa dihafal. Kunci dan pembahasan dihitung otomatis.</p>
+      <div class="form">
+        <div><label>Jenis soal<select id="gJ"><option>Semua</option><option>Deret angka</option><option>Suku ke-n</option><option>Analogi angka</option><option>Hubungan X dan Y</option><option>Hitung cepat</option><option>Analisis data</option><option>Optimasi biaya</option><option>Soal cerita</option></select></label></div>
+        <div><label>Jumlah soal<select id="gN"><option>10</option><option selected>20</option><option>30</option></select></label></div>
+      </div>
+      <div class="row"><button class="btn" onclick="mulaiGen('latihan')">Latihan soal baru</button><button class="btn ghost" onclick="mulaiGen('tryout')">Tryout berwaktu</button></div>
       <div id="qStat" style="margin-top:14px"></div></section>
 
     <section class="card"><h2>Tambah soal</h2><p class="sub">Soal tersimpan pribadi di akun Anda, tidak di file aplikasi yang publik.</p>
@@ -388,7 +395,11 @@ function TG(){const o={...TG_DEF},t=rawT();Object.keys(t).forEach(k=>{if(t[k]!=n
 function AW(){return (P.target&&P.target.awal)||{}}
 function best(j){const v=D.latihan.filter(l=>l.jenis===j).map(l=>l.nilai);if(!v.length)return null;return j==='shuttle'?Math.min(...v):Math.max(...v)}
 function latest(j){const v=D.latihan.filter(l=>l.jenis===j);return v.length?v[v.length-1].nilai:null}
-function maxNow(j){const b=best(j),a=Number(AW()[j])||null;return Math.max(b||0,a||0)||AW_DEF[j]}
+function maxNow(j){
+  const t=D.latihan.filter(l=>l.jenis===j&&l.catatan==='Tes mingguan');if(t.length)return t[t.length-1].nilai;
+  const a=Number(AW()[j]);if(a>0)return a;
+  const b=best(j);return b?Math.min(b,AW_DEF[j]*3):AW_DEF[j];
+}
 
 /* ---------- Program ---------- */
 function prog(){
@@ -598,7 +609,20 @@ function renderHero(){
 /* ---------- Hari ini ---------- */
 function renderHari(){
   if(!$('tgl').value)$('tgl').value=today();if(!$('lt').value)$('lt').value=today();
-  renderMisi();renderCekPagi();
+  renderMisi();renderCekPagi();renderRiwayat();
+}
+const NAMA={pushup:['Push up','kali'],situp:['Sit up','kali'],pullup:['Pull up','kali'],lari12:['Lari 12 menit','m'],shuttle:['Shuttle run','detik'],sepeda:['Sepeda','km'],renang:['Renang','m'],twk:['TWK','poin'],tiu:['TIU','poin'],tkp:['TKP','poin'],skd:['SKD total','poin']};
+function renderRiwayat(){
+  const a=D.latihan.map(l=>({t:'latihan',id:l.id,tg:l.tanggal,txt:(NAMA[l.jenis]||[l.jenis,''])[0]+' '+String(l.nilai).replace('.',',')+' '+(NAMA[l.jenis]||['',''])[1],c:l.catatan}))
+    .concat(D.lari.map(r=>({t:'lari',id:r.id,tg:r.tanggal,txt:'Lari '+String(r.km).replace('.',',')+' km, '+String(r.menit).replace('.',',')+' menit',c:r.catatan})))
+    .sort((x,y)=>y.tg.localeCompare(x.tg)||y.id-x.id).slice(0,12);
+  $('riw').innerHTML=a.length?'<h3 class="lbl" style="margin-top:0">Catatan terakhir. Hapus kalau ada yang salah.</h3>'+a.map(x=>`<div class="stk"><span>${esc(x.txt)}<br><small class="msg">${fmtTgl(x.tg)}${x.c?', '+esc(x.c):''}</small></span><button class="btn ghost sm" id="hp-${x.t}-${x.id}" onclick="hapusCatatan('${x.t}',${Number(x.id)})">Hapus</button></div>`).join(''):'';
+}
+async function hapusCatatan(t,id){
+  const b=$('hp-'+t+'-'+id);
+  if(b&&!b.dataset.ok){b.dataset.ok=1;b.textContent='Yakin?';b.classList.remove('ghost');b.classList.add('red');setTimeout(()=>{if(b){delete b.dataset.ok;b.textContent='Hapus';b.classList.add('ghost');b.classList.remove('red')}},4000);return}
+  const {error}=await db.from(t).delete().eq('id',id);if(error){toast(error.message);return}
+  await refresh();toast('Catatan dihapus');
 }
 function banner(){
   let h=st.why.map(w=>`<div class="cb ${w[1]?'':'info'}">${esc(w[0])}</div>`).join('');
@@ -963,6 +987,148 @@ function impor(inp){
   };
   rd.readAsText(file);
 }
+/* ---------- Generator soal TIU tak terbatas ---------- */
+const GR=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const GP=a=>a[Math.floor(Math.random()*a.length)];
+const GS=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function gN(v){
+  if(typeof v==='string')return v;
+  const neg=v<0;let s;v=Math.abs(v);
+  if(Number.isInteger(v))s=String(v).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+  else s=String(+v.toFixed(2)).replace('.',',');
+  return (neg?'−':'')+s;
+}
+const gRp=n=>'Rp'+gN(n);
+function gMk(topik,q,benar,salah,pemb){
+  const b=gN(benar),o=salah.map(gN);
+  if(o.length!==4||o.includes(b)||new Set(o).size!==4)return null;
+  const pos=GR(0,4);o.splice(pos,0,b);
+  return {ref:'gen:'+topik,subtes:'TIU',topik,pertanyaan:q,pilihan:o,nilai:[0,1,2,3,4].map(i=>i===pos?5:0),pembahasan:pemb,gen:true};
+}
+function gNear(v,step,min){
+  step=step||Math.max(1,Math.round(Math.abs(v)/20));min=min==null?1:min;const c=new Set();let t=0;
+  while(c.size<4&&t++<200){const d=GP([-3,-2,-1,1,2,3,4])*step,x=v+d;if(x!==v&&x>=min)c.add(x)}
+  return [...c];
+}
+const sgn=b=>(b>=0?'+ ':'− ')+Math.abs(b);
+const GEN={
+  'Deret angka':()=>{
+    const t=GR(0,6);let s=[],nx,why;
+    if(t===0){const a=GR(1,9),d=GR(1,4),c=GR(1,3);let x=a,step=d;for(let i=0;i<6;i++){s.push(x);x+=step;step+=c}nx=x;why=`Selisihnya bertambah ${c} setiap langkah: ${s.slice(1).map((v,i)=>v-s[i]).join(', ')}, lalu ${nx-s[5]}.`}
+    else if(t===1){const a=GR(1,5),r=GR(2,3);let x=a;for(let i=0;i<5;i++){s.push(x);x*=r}nx=x;why=`Setiap suku dikali ${r}.`}
+    else if(t===2){const a=GR(1,6),k=GR(2,3),c=GR(-2,3)||1;let x=a;for(let i=0;i<5;i++){s.push(x);x=x*k+c}nx=x;why=`Setiap suku dikali ${k} lalu ${c>0?'ditambah '+c:'dikurangi '+(-c)}.`}
+    else if(t===3){const a=GR(2,15),p=GR(2,6),m=GR(2,3);let x=a;for(let i=0;i<6;i++){s.push(x);x=i%2===0?x+p:x*m}nx=x;why=`Polanya bergantian: +${p} lalu ×${m}. Setelah ${s[5]} giliran ×${m}, jadi ${s[5]} × ${m} = ${x}.`}
+    else if(t===4){const a=GR(10,40),d1=GR(2,6),b=GR(1,9),d2=GR(2,6),dn=Math.random()<.5;for(let i=0;i<3;i++){s.push(a+(dn?-1:1)*d1*i);s.push(b+d2*i)}nx=a+(dn?-1:1)*d1*3;why=`Ada dua deret yang berselang-seling. Suku ganjil: ${s[0]}, ${s[2]}, ${s[4]} (${dn?'turun':'naik'} ${d1}), berikutnya ${nx}. Suku genap: ${s[1]}, ${s[3]}, ${s[5]} (naik ${d2}).`; if(nx<=0)return null}
+    else if(t===5){const c=GR(-3,5),st=GR(1,4);for(let i=0;i<5;i++)s.push((st+i)**2+c);nx=(st+5)**2+c;why=`Pola bilangan kuadrat ${c?(c>0?'ditambah '+c:'dikurangi '+(-c)):''}: ${st}², ${st+1}², ${st+2}², dan seterusnya. Berikutnya ${st+5}²${c?(c>0?' + '+c:' − '+(-c)):''} = ${nx}.`}
+    else{let a=GR(1,5),b=GR(2,7);s=[a,b];for(let i=0;i<4;i++)s.push(s[s.length-1]+s[s.length-2]);nx=s[5]+s[4];why=`Setiap suku adalah jumlah dua suku sebelumnya: ${s[4]} + ${s[5]} = ${nx}.`}
+    if(s.some(x=>x<=0)||nx<=0||nx>99999)return null;
+    return gMk('Deret angka',s.join(', ')+', ...',nx,gNear(nx,Math.max(1,Math.round(nx/25))),why);
+  },
+  'Suku ke-n':()=>{
+    const a=GR(2,7),b=GR(-4,9),ns=GS([...Array(30).keys()].map(i=>i+1)).slice(0,6).sort((x,y)=>x-y),tg=ns[5]+GR(4,14),f=n=>a*n+b;
+    if(f(ns[0])<=0)return null;
+    const rows=ns.map(n=>`Suku ke-${n}: ${f(n)}`).join('\n'),rumus=`Un = ${a}n ${sgn(b)}`;
+    if(Math.random()<.65)return gMk('Suku ke-n',`Perhatikan tabel berikut.\n${rows}\nSuku ke-${tg}: ?\nNilai suku ke-${tg} adalah ...`,f(tg),gNear(f(tg),a),
+      `Dari suku ke-${ns[0]} ke suku ke-${ns[1]}, nilai naik ${f(ns[1])-f(ns[0])} dalam ${ns[1]-ns[0]} langkah, jadi naik ${a} per langkah. Rumusnya ${rumus}. Suku ke-${tg} = ${a} × ${tg} ${sgn(b)} = ${f(tg)}.`);
+    return gMk('Suku ke-n',`Perhatikan tabel berikut.\n${rows}\nNilai ${f(tg)} merupakan suku ke- ...`,tg,gNear(tg,1),`Rumusnya ${rumus}. Dari ${f(tg)} = ${a}n ${sgn(b)}, diperoleh n = ${tg}.`);
+  },
+  'Analogi angka':()=>{
+    const R=GP([['kolom 1 = kolom 2 × kolom 3 + 2',(b,c)=>b*c+2],['kolom 1 = kolom 2 × kolom 3 − kolom 3',(b,c)=>b*c-c],['kolom 1 = kolom 2² + kolom 3',(b,c)=>b*b+c],
+      ['kolom 1 = kolom 2² − kolom 3',(b,c)=>b*b-c],['kolom 1 = (kolom 2 + kolom 3) × 3',(b,c)=>(b+c)*3],['kolom 1 = kolom 2 × 5 + kolom 3',(b,c)=>b*5+c],
+      ['kolom 1 = (kolom 2 − kolom 3) × kolom 3',(b,c)=>(b-c)*c],['kolom 1 = kolom 2 × kolom 3 + kolom 2',(b,c)=>b*c+b],['kolom 1 = kolom 2 × 2 + kolom 3 × 3',(b,c)=>b*2+c*3]]);
+    const rows=[];let t=0;
+    while(rows.length<3&&t++<50){const b=GR(3,12),c=GR(2,8),a=R[1](b,c);if(a>0&&!rows.some(r=>r[1]===b&&r[2]===c))rows.push([a,b,c])}
+    if(rows.length<3)return null;
+    const hr=GR(0,2);let hc=GP([0,0,1,2]);
+    if(hc){const sol=[];for(let x=0;x<200;x++){const v=hc===1?R[1](x,rows[hr][2]):R[1](rows[hr][1],x);if(v===rows[hr][0])sol.push(x)}if(sol.length!==1)hc=0}
+    const ans=rows[hr][hc],g=rows.map((r,i)=>r.map((v,j)=>i===hr&&j===hc?'X':String(v)).join('  |  ')).join('\n'),o=rows[(hr+1)%3];
+    return gMk('Analogi angka','Perhatikan susunan angka berikut.\n'+g+'\nNilai X yang tepat adalah ...',ans,gNear(ans,Math.max(1,Math.round(ans/15)),0),
+      `Polanya sama di setiap baris: ${R[0]}. Contoh baris lain: ${o[1]} dan ${o[2]} menghasilkan ${o[0]}. Jadi X = ${ans}.`);
+  },
+  'Hubungan X dan Y':()=>{
+    const ex=()=>{const t=GR(0,5),a=GR(2,12),b=GR(2,9),c=GR(1,20);
+      if(t===0)return [`${a} × ${b} − ${c}`,a*b-c];if(t===1)return [`(${a} + ${b}) × ${GR(2,4)}`,null];
+      if(t===2){const d=GR(2,6);return [`${a*d} ÷ ${d} + ${c}`,a+c]}if(t===3)return [`${a}² − ${b} × ${GR(2,5)}`,null];
+      if(t===4)return [`${c} − ${a} − ${b}`,c-a-b];return [`${b*4}% × ${a*25}`,b*a]};
+    const ev=s=>{const m=s.match(/^\((\d+) \+ (\d+)\) × (\d+)$/);if(m)return (+m[1]+ +m[2])*+m[3];const n=s.match(/^(\d+)² − (\d+) × (\d+)$/);if(n)return n[1]*n[1]-n[2]*n[3];return null};
+    let [e1,x]=ex(),[e2,y]=ex();if(x==null)x=ev(e1);if(y==null)y=ev(e2);if(e1===e2)return null;
+    const REL=[['X > Y',x>y],['X < Y',x<y],['X = Y',x===y],['2X > Y',2*x>y],['X > 2Y',x>2*y],['2X = Y',2*x===y],['X = 2Y',x===2*y],['3X < Y',3*x<y],['X + Y = 0',x+y===0],['X < 2Y',x<2*y],['3X > 2Y',3*x>2*y],['X − Y = 1',x-y===1]];
+    const T=REL.filter(r=>r[1]),F=GS(REL.filter(r=>!r[1]));if(!T.length||F.length<4)return null;
+    const t=GP(T);
+    return gMk('Hubungan X dan Y',`Diketahui:\nX = ${e1}\nY = ${e2}\nHubungan yang benar antara X dan Y adalah ...`,t[0],F.slice(0,4).map(r=>r[0]),
+      `Kerjakan sesuai urutan operasi (kurung, pangkat, kali/bagi, lalu tambah/kurang): X = ${gN(x)} dan Y = ${gN(y)}. Jadi "${t[0]}" benar, pilihan lain salah.`);
+  },
+  'Hitung cepat':()=>{
+    const a=GR(12,49),b=GR(12,49),p=a*b,f=[];for(let x=11;x<100;x++)if(p%x===0){const y=p/x;if(y>=11&&y<100&&!((x===a&&y===b)||(x===b&&y===a)))f.push([x,y])}
+    if(!f.length)return null;const [c,d]=GP(f),w=new Set();let t=0;
+    while(w.size<4&&t++<100){const x=c+GP([-2,-1,1,2]),y=d+GP([-3,-1,1,3]);if(x*y!==p)w.add(`${x} × ${y}`)}
+    return gMk('Hitung cepat',`Operasi yang hasilnya sama dengan ${a} × ${b} adalah ...`,`${c} × ${d}`,[...w],`${a} × ${b} = ${gN(p)}. Hanya ${c} × ${d} yang juga bernilai ${gN(p)}. Trik: pecah angka menjadi faktor, lalu susun ulang.`);
+  },
+  'Analisis data':()=>{
+    const nm=GS(['Aldi','Bima','Caca','Dini','Eka','Farah','Gita','Hadi','Indah','Joko']).slice(0,5),d={};
+    nm.forEach(n=>d[n]=[GR(60,95),GR(60,95),GR(60,95)]);const sm=n=>d[n].reduce((a,b)=>a+b,0);
+    if(new Set(nm.map(sm)).size<5)return null;const rk=[...nm].sort((a,b)=>sm(b)-sm(a));
+    const tbl='Peserta: nilai tes 1, tes 2, tes 3\n'+nm.map(n=>`${n}: ${d[n].join(', ')}`).join('\n'),pemb='Jumlahkan nilai tiap peserta (rata-rata sebanding dengan jumlah): '+rk.map(n=>n+' '+sm(n)).join(', ')+'.';
+    if(Math.random()<.5){const ans=[rk[0],rk[1]].sort().join(' dan '),w=new Set();let t=0;while(w.size<4&&t++<100){const p=GS(nm).slice(0,2).sort(),s=p.join(' dan ');if(s!==ans)w.add(s)}
+      return gMk('Analisis data',tbl+'\nPeringkat ditentukan dari rata-rata ketiga tes. Dua peserta dengan rata-rata tertinggi adalah ...',ans,[...w],pemb)}
+    const ans=rk.slice(-3).reverse().join(', '),w=new Set();let t=0;while(w.size<4&&t++<100){const s=GS(nm).slice(0,3).join(', ');if(s!==ans)w.add(s)}
+    return gMk('Analisis data',tbl+'\nPeringkat ditentukan dari rata-rata ketiga tes. Tiga peserta dengan rata-rata terendah, diurutkan dari yang paling rendah, adalah ...',ans,[...w],pemb);
+  },
+  'Optimasi biaya':()=>{
+    const it=GP([['Panitia membutuhkan air mineral','botol'],['Sekolah akan mencetak modul','modul'],['Kantor desa akan membeli kertas','rim'],['Panitia lomba menyewa kursi','kursi'],['Desa membutuhkan bibit pohon','bibit']]);
+    const s1=GR(2,6)*5,s2=s1*GR(2,3)-GR(0,1)*5,s3=s2+GR(2,5)*5,u=GR(3,20)*1000;
+    const pk=[['A',s1,s1*u],['B',s2,Math.round(s2*u*GR(88,97)/100/1000)*1000],['C',s3,Math.round(s3*u*GR(80,94)/100/1000)*1000]];
+    const lo=Math.round(s3*GR(18,30)/10/5)*5,hi=lo+GR(3,8)*5;
+    let best=null,ties=0;const all=[];
+    for(let a=0;a<9;a++)for(let b=0;b<9;b++)for(let c=0;c<9;c++){const isi=a*s1+b*s2+c*s3,h=a*pk[0][2]+b*pk[1][2]+c*pk[2][2];if(!(a+b+c))continue;all.push([a,b,c,isi,h]);
+      if(isi>=lo&&isi<hi){if(!best||h<best[4]){best=[a,b,c,isi,h];ties=1}else if(h===best[4])ties++}}
+    if(!best||ties!==1)return null;
+    const nm=c=>['A','B','C'].map((p,i)=>c[i]?`${c[i]} paket ${p}`:'').filter(Boolean).join(' + ');
+    const w=GS(all.filter(c=>c[0]+c[1]+c[2]<=6&&nm(c)!==nm(best)&&c[3]>=lo-s1&&c[3]<hi+s3)).slice(0,4).map(nm);if(w.length<4)return null;
+    const tbl=pk.map(p=>`Paket ${p[0]}: ${p[1]} ${it[1]}, ${gRp(p[2])}`).join('\n');
+    return gMk('Optimasi biaya',`${it[0]}. Pilihan paket:\n${tbl}\nKetentuan: boleh membeli lebih dari satu paket, jumlah minimal ${lo} dan kurang dari ${hi} ${it[1]}. Kombinasi dengan biaya paling murah adalah ...`,nm(best),w,
+      `Kombinasi yang memenuhi syarat (${lo} sampai di bawah ${hi} ${it[1]}) dengan biaya terendah adalah ${nm(best)}: ${best[3]} ${it[1]} seharga ${gRp(best[4])}. Pilihan lain lebih mahal atau jumlahnya tidak memenuhi syarat.`);
+  },
+  'Soal cerita':()=>{
+    const t=GR(0,7);
+    if(t===0){const v1=GR(4,8)*10,v2=v1+GR(1,3)*10,j=GR(2,7),m=GP([0,30]),jam=j+m/60,s=(v1+v2)*jam;if(!Number.isInteger(s))return null;
+      const tib=GR(9,14)*60+GP([0,10,20,30,40,50]),bk=tib-j*60-m,hh=x=>pad(Math.floor(x/60))+'.'+pad(x%60);
+      return gMk('Soal cerita',`Jarak kota P dan Q ${gN(s)} km. Andi berangkat dari P dengan kecepatan ${v1} km/jam dan Budi dari Q dengan kecepatan ${v2} km/jam, saling menuju dan berangkat bersamaan. Jika mereka bertemu pukul ${hh(tib)}, mereka berangkat pukul ...`,
+        hh(bk),[-60,-30,30,60].map(d=>hh(bk+d)),`Saling mendekat, kecepatan dijumlah: ${v1} + ${v2} = ${v1+v2} km/jam. Waktu = ${gN(s)} : ${v1+v2} = ${gN(jam)} jam. ${hh(tib)} dikurangi ${j} jam ${m} menit = ${hh(bk)}.`)}
+    if(t===1){const p=GP([[3,6,2],[4,12,3],[6,12,4],[10,15,6],[12,24,8],[20,30,12],[6,3,2],[12,4,3],[15,10,6]]),n=GP(['mengecat pagar','membersihkan aula','menyelesaikan laporan']);
+      return gMk('Soal cerita',`Rina dapat ${n} dalam ${p[0]} hari, sedangkan Sari dalam ${p[1]} hari. Jika bekerja bersama, pekerjaan itu selesai dalam ... hari.`,p[2],gNear(p[2],1),
+        `Per hari Rina menyelesaikan 1/${p[0]} dan Sari 1/${p[1]} bagian. Bersama: 1/${p[0]} + 1/${p[1]} = 1/${p[2]} bagian per hari, jadi selesai dalam ${p[2]} hari.`)}
+    if(t===2){const a=GR(2,5),b=a+GR(1,4),k=GR(2,12)*5000,sel=(b-a)*k,tot=(a+b)*k;
+      return gMk('Soal cerita',`Perbandingan uang Dewi dan Eka adalah ${a} : ${b}. Jika selisih uang mereka ${gRp(sel)}, jumlah uang mereka berdua adalah ...`,gRp(tot),[gRp(tot-2*k),gRp(tot+k),gRp(b*k),gRp(tot+2*k)],
+        `Selisih ${b-a} bagian = ${gRp(sel)}, jadi 1 bagian = ${gRp(k)}. Jumlah ${a+b} bagian = ${gRp(tot)}.`)}
+    if(t===3){const h=GR(2,20)*50000,d1=GP([10,20,25,30]),d2=GP([10,20]),r=h*(100-d1)/100*(100-d2)/100;if(!Number.isInteger(r))return null;
+      return gMk('Soal cerita',`Sebuah barang seharga ${gRp(h)} mendapat diskon ${d1}%, lalu diskon tambahan ${d2}% dari harga setelah diskon pertama. Harga yang dibayar adalah ...`,gRp(r),[gRp(h*(100-d1-d2)/100),gRp(h*(100-d1)/100),gRp(r+h/20),gRp(r-h/20)],
+        `Setelah diskon ${d1}%: ${gRp(h*(100-d1)/100)}. Diskon ${d2}% dari harga itu, sehingga harga akhir ${gRp(r)}. Diskon bertingkat tidak sama dengan diskon ${d1+d2}%.`)}
+    if(t===4){const n=GR(4,9),r1=GR(70,85),r2=r1+GR(1,4),x=r2*(n+1)-r1*n;if(x>100)return null;
+      return gMk('Soal cerita',`Rata-rata nilai ${n} siswa adalah ${r1}. Setelah satu siswa baru masuk, rata-ratanya menjadi ${r2}. Nilai siswa baru itu adalah ...`,x,gNear(x,1),
+        `Total awal ${n} × ${r1} = ${n*r1}. Total baru ${n+1} × ${r2} = ${(n+1)*r2}. Nilai siswa baru = ${(n+1)*r2} − ${n*r1} = ${x}.`)}
+    if(t===5){const k=GR(3,5),m=k-1,y=GR(3,10),a=(m-1)*y/(k-m);if(!Number.isInteger(a)||a<3)return null;
+      return gMk('Soal cerita',`Umur ayah sekarang ${k} kali umur anaknya. ${y} tahun lagi, umur ayah ${m} kali umur anaknya. Umur anak sekarang adalah ... tahun.`,a,gNear(a,1),
+        `Misal umur anak x, ayah ${k}x. ${y} tahun lagi: ${k}x + ${y} = ${m}(x + ${y}), sehingga ${k-m}x = ${(m-1)*y}, x = ${a}.`)}
+    if(t===6){const sk=GP([50000,100000,200000,250000,500000]),cm=GR(2,12),km=cm*sk/100000;
+      return gMk('Soal cerita',`Jarak dua kota pada peta berskala 1 : ${gN(sk)} adalah ${cm} cm. Jarak sebenarnya adalah ... km.`,km,[km*10,km/10,km+2,km*2].filter(v=>v!==km),
+        `${cm} × ${gN(sk)} = ${gN(cm*sk)} cm. Bagi 100.000 untuk mengubah ke km: ${gN(km)} km.`)}
+    const b=GR(4,40)*10000,p=GP([10,15,20,25,30]),j=b*(100+p)/100;
+    return gMk('Soal cerita',`Pedagang membeli barang seharga ${gRp(b)} dan ingin untung ${p}%. Harga jualnya adalah ...`,gRp(j),[gRp(b+p*1000),gRp(j+b/10),gRp(b*(100-p)/100),gRp(j-b/20)],
+      `Untung ${p}% × ${gRp(b)} = ${gRp(b*p/100)}. Harga jual = ${gRp(b)} + ${gRp(b*p/100)} = ${gRp(j)}.`);
+  }
+};
+const GEN_JENIS=Object.keys(GEN);
+function genSoal(jenis){
+  for(let t=0;t<300;t++){const j=jenis==='Semua'?GP(GEN_JENIS):jenis,o=GEN[j]();if(o)return o}
+  return null;
+}
+function mulaiGen(mode){
+  const j=$('gJ').value,n=Number($('gN').value),list=[];
+  for(let i=0;i<n;i++){const o=genSoal(j);if(o)list.push(o)}
+  if(!list.length){toast('Soal gagal dibuat, coba lagi.');return}
+  runQuiz(mode,list);
+}
 /* ---------- Latihan terpandu ---------- */
 const SAY={
  start:['Dengar baik-baik. Hari ini tidak ada tawar-menawar. Kerjakan semuanya!','Fokus. Kursi di formasi itu tidak menunggu orang yang setengah hati. Mulai!','Siap? Pesaingmu sedang latihan juga. Jangan kalah hari ini!'],
@@ -1030,7 +1196,7 @@ function inputOk(){
   if(s.kind==='lari'){push(addRun({tanggal:t0,km:v,menit:Math.max(1,Math.round(S.last/60)),catatan:'Latihan terpandu'}));cmp(v,s.target)}
   else if(s.kind==='benar'){if(v<15){k='low';mad=true}else if(v<24)k='mid'}
   else{
-    push(addLatihan({jenis:s.kind,tanggal:t0,nilai:v,catatan:'Latihan terpandu'}));
+    push(addLatihan({jenis:s.kind,tanggal:t0,nilai:v,catatan:S.m.tipe==='tes'?'Tes mingguan':'Latihan terpandu'}));
     if(['pushup','situp','pullup','lari12'].includes(s.kind)&&S.m.tipe==='tes')cmp(v,T[s.kind]);
     if(s.kind==='shuttle')cmp(v,T.shuttle,1);
     if(['twk','tiu','tkp'].includes(s.kind)){S.skd[s.kind]=v;cmp(v,T[s.kind]);
@@ -1166,7 +1332,9 @@ function mulaiQuiz(mode){
   let pool=allSoal().filter(s=>(sub==='Semua'||s.subtes===sub)&&(top==='Semua'||s.topik===top));
   if(mode==='ulang'){const w=salahRefs();pool=pool.filter(s=>w.has(s.ref))}
   if(!pool.length){toast(mode==='ulang'?'Tidak ada soal yang salah untuk pilihan ini. Bagus!':'Belum ada soal untuk pilihan ini.');return}
-  pool=acak(pool).slice(0,n);
+  runQuiz(mode,acak(pool).slice(0,n));
+}
+function runQuiz(mode,pool){
   Q={mode,list:pool,i:0,ans:[],sec:mode==='tryout'?pool.length*60:0,qs:Date.now()};
   $('qz').classList.add('on');$('qzT').textContent='';if(Q.sec){qTime();Q.tm=setInterval(qTick,1000)}
   qView();
