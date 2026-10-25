@@ -49,6 +49,22 @@ button.pill:hover{background:#fff;color:var(--blue)}
 @keyframes tin{from{opacity:0;transform:translateY(8px)}}
 .card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px -18px rgba(10,36,87,.35)}
 .card h2{margin:0 0 4px;font-size:17px}.sub{color:var(--mut);font-size:13px;margin:0 0 12px;line-height:1.5}
+.guru{background:linear-gradient(135deg,#fff 60%,#EAF3FF);border:1.5px solid #BFD6FB}
+.btn.big{padding:15px 22px;font-size:16px;width:100%}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px;border-radius:16px;border:1.5px solid var(--line);background:var(--ice);color:var(--navy);cursor:pointer;font:inherit;transition:.2s}
+.tile:hover{border-color:var(--blue);transform:translateY(-2px)}.tile span{font-size:26px}.tile b{font:700 16px Sora,system-ui,sans-serif}.tile small{color:var(--mut);font-size:12px;line-height:1.4}
+.tile.wide{width:100%;margin-top:10px}
+.mtr{display:flex;justify-content:space-between;align-items:center;width:100%;padding:12px 14px;margin-top:8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--navy);font:600 14px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;text-align:left}
+.mtr small{display:block;font-weight:500;color:var(--mut);font-size:12px}.mtr:hover{border-color:var(--blue)}
+.bar.lm{position:relative;overflow:visible}.bar.lm em{position:absolute;top:-4px;width:2px;height:18px;background:var(--navy);border-radius:2px}
+details>summary{cursor:pointer;color:var(--blue);font-weight:600;list-style:none}details>summary::-webkit-details-marker{display:none}
+details.card>summary b{color:var(--navy);font:700 17px Sora,system-ui,sans-serif}
+.siap{display:flex;flex-direction:column;align-items:center;gap:16px;margin:26px 0 8px}
+.napas{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#fff 0%,rgba(255,255,255,.35) 60%,rgba(255,255,255,.08) 100%);animation:napas 8s ease-in-out infinite}
+@keyframes napas{0%,100%{transform:scale(.7);opacity:.7}50%{transform:scale(1.15);opacity:1}}
+#napT{font:600 18px 'Plus Jakarta Sans',system-ui,sans-serif;margin:0}
+.cdn{font-size:140px;margin:60px 0;animation:pop .8s ease}
 .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
 .kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .kpi{background:var(--ice);border-radius:14px;padding:14px}
@@ -200,34 +216,32 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
 
   <!-- SKD -->
   <section class="tab" id="tab-skd">
-    <section class="card"><h2>Skor SKD</h2><p class="sub" id="skdS"></p><div class="kpis" id="skdK"></div>
-      <canvas id="cTot" style="margin-top:14px"></canvas><canvas id="cSkd" style="margin-top:14px"></canvas>
-      <h3 class="lbl">Catat skor tryout</h3>
-      <div class="form">
-        <div><label>Tanggal<input type="date" id="sT"></label></div>
-        <div><label>TWK<input type="number" id="sTwk" placeholder="85"></label></div>
-        <div><label>TIU<input type="number" id="sTiu" placeholder="95"></label></div>
-        <div><label>TKP<input type="number" id="sTkp" placeholder="180"></label></div>
-      </div>
-      <div class="row"><button class="btn" onclick="simpanSkd()">Simpan skor</button><span class="msg" id="msk"></span></div></section>
+    <section class="card guru"><div class="hd"><h2>👨‍🏫 Tugas dari guru hari ini</h2><span class="msg" id="tgS"></span></div>
+      <p class="sub" id="tgMsg" style="margin-top:6px"></p><div id="tgList"></div>
+      <div class="bar" style="margin-top:12px"><i id="tgB"></i></div>
+      <div class="row"><button class="btn big" id="tgBtn" onclick="mulaiTugas()">Mulai tugas hari ini</button></div></section>
 
-    <section class="card"><h2>Latihan soal</h2><p class="sub" id="bsS"></p>
-      <div class="form">
-        <div><label>Subtes<select id="qSub" onchange="isiTopik()"><option>Semua</option><option>TWK</option><option>TIU</option><option>TKP</option></select></label></div>
-        <div><label>Topik<select id="qTop"></select></label></div>
-        <div><label>Jumlah soal<select id="qN"><option>10</option><option selected>20</option><option>30</option><option value="999">Semua</option></select></label></div>
-      </div>
-      <div class="row"><button class="btn" onclick="mulaiQuiz('latihan')">Latihan</button><button class="btn ghost" onclick="mulaiQuiz('ulang')">Ulang yang salah</button><button class="btn ghost" onclick="mulaiQuiz('tryout')">Tryout mini berwaktu</button></div>
-      <h3 class="lbl" style="margin-top:18px">Soal TIU tak terbatas</h3>
-      <p class="sub" style="margin:4px 0 8px">Angka dan cerita dibuat baru setiap kali latihan, jadi tidak bisa dihafal. Kunci dan pembahasan dihitung otomatis.</p>
-      <div class="form">
-        <div><label>Jenis soal<select id="gJ"><option>Semua</option><option>Deret angka</option><option>Suku ke-n</option><option>Analogi angka</option><option>Hubungan X dan Y</option><option>Hitung cepat</option><option>Analisis data</option><option>Optimasi biaya</option><option>Soal cerita</option></select></label></div>
-        <div><label>Jumlah soal<select id="gN"><option>10</option><option selected>20</option><option>30</option></select></label></div>
-      </div>
-      <div class="row"><button class="btn" onclick="mulaiGen('latihan')">Latihan soal baru</button><button class="btn ghost" onclick="mulaiGen('tryout')">Tryout berwaktu</button></div>
-      <div id="qStat" style="margin-top:14px"></div></section>
+    <section class="card"><h2>Kelemahanmu</h2><p class="sub">Dihitung dari semua jawabanmu. Yang paling atas paling perlu dilatih.</p><div id="lemah"></div></section>
 
-    <section class="card"><h2>Tambah soal</h2><p class="sub">Soal tersimpan pribadi di akun Anda, tidak di file aplikasi yang publik.</p>
+    <section class="card"><h2>Latihan sendiri</h2>
+      <div class="tiles">
+        <button class="tile" onclick="pilihTryout()"><span>📝</span><b>Tryout</b><small>Simulasi berwaktu seperti tes asli</small></button>
+        <button class="tile" onclick="pilihMateri()"><span>📚</span><b>Belajar per materi</b><small>10 soal dengan pembahasan</small></button>
+      </div></section>
+
+    <section class="card"><h2>Riwayat skor SKD</h2><p class="sub">Dari tryout di aplikasi dan tryout di luar aplikasi.</p><div class="kpis" id="skdK"></div>
+      <canvas id="cTot" style="margin-top:14px"></canvas>
+      <details style="margin-top:12px"><summary>Catat skor tryout dari luar aplikasi</summary>
+        <div class="form" style="margin-top:10px">
+          <div><label>Tanggal<input type="date" id="sT"></label></div>
+          <div><label>TWK<input type="number" id="sTwk" placeholder="85"></label></div>
+          <div><label>TIU<input type="number" id="sTiu" placeholder="95"></label></div>
+          <div><label>TKP<input type="number" id="sTkp" placeholder="180"></label></div>
+        </div>
+        <div class="row"><button class="btn" onclick="simpanSkd()">Simpan skor</button><span class="msg" id="msk"></span></div></details></section>
+
+    <details class="card"><summary><b>Kelola bank soal</b><br><small class="msg" id="bsS"></small></summary>
+      <p class="sub" style="margin-top:10px">Tambah soal sendiri atau impor file soal dari Claude. Soal tersimpan pribadi di akun Anda.</p>
       <div class="form">
         <div><label>Subtes<select id="sSub" onchange="formKunci()"><option>TIU</option><option>TWK</option><option>TKP</option></select></label></div>
         <div><label>Topik<input id="sTop" list="dlTop" placeholder="Deret angka"></label><datalist id="dlTop"></datalist></div>
@@ -237,7 +251,7 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
       <label class="lbl">Pembahasan (opsional)<textarea id="sP" rows="2"></textarea></label>
       <div class="row"><button class="btn" onclick="simpanSoal()">Simpan soal</button>
         <input type="file" id="qj" accept=".json,application/json" hidden onchange="imporSoal(this)"><button class="btn ghost" onclick="$('qj').click()">Impor file soal (JSON)</button><span class="msg" id="mso"></span></div>
-      <div id="qList" style="margin-top:14px"></div></section>
+      <div id="qList" style="margin-top:14px"></div></details>
   </section>
 
   <!-- PROFIL -->
@@ -1123,12 +1137,6 @@ function genSoal(jenis){
   for(let t=0;t<300;t++){const j=jenis==='Semua'?GP(GEN_JENIS):jenis,o=GEN[j]();if(o)return o}
   return null;
 }
-function mulaiGen(mode){
-  const j=$('gJ').value,n=Number($('gN').value),list=[];
-  for(let i=0;i<n;i++){const o=genSoal(j);if(o)list.push(o)}
-  if(!list.length){toast('Soal gagal dibuat, coba lagi.');return}
-  runQuiz(mode,list);
-}
 /* ---------- Latihan terpandu ---------- */
 const SAY={
  start:['Dengar baik-baik. Hari ini tidak ada tawar-menawar. Kerjakan semuanya!','Fokus. Kursi di formasi itu tidak menunggu orang yang setengah hati. Mulai!','Siap? Pesaingmu sedang latihan juga. Jangan kalah hari ini!'],
@@ -1251,33 +1259,6 @@ function statTopik(){
     const sc=tkp?a.reduce((x,j)=>x+(j.skor||0),0)/a.length/5:a.filter(benarJ).length/a.length;
     return {sub,top,n:a.length,sc,label:(tkp?'rata-rata nilai '+f(sc*5,1).replace('.',','):Math.round(sc*100)+'% benar')+' dari '+a.length+' soal'}}).sort((a,b)=>a.sc-b.sc);
 }
-function renderSkd(){
-  const T=TG();if(!$('sT').value)$('sT').value=today();
-  $('skdS').textContent='Target total '+T.skd+'. Ambang batas tiap subtes: TWK '+T.twk+', TIU '+T.tiu+', TKP '+T.tkp+'. Total harus lolos ambang dan cukup tinggi untuk bersaing di formasi.';
-  const lt=j=>latest(j),k=[['twk','TWK',150],['tiu','TIU',175],['tkp','TKP',225],['skd','Total',550]];
-  $('skdK').innerHTML=k.map(a=>{const v=lt(a[0]),t=T[a[0]],kur=v==null?null:t-v;return `<div class="kpi"><span>${a[1]} terakhir</span><b class="${v!=null&&v>=t?'up':v!=null?'dn':''}">${v==null?'-':v}</b><span>${v==null?'target '+t:kur>0?'kurang '+kur+' dari '+t:'lolos target '+t}</span></div>`}).join('');
-  const L=D.latihan,ds=[...new Set(L.filter(l=>['twk','tiu','tkp','skd'].includes(l.jenis)).map(l=>l.tanggal))].sort(),col={twk:'#1D5FE0',tiu:'#5BB6FF',tkp:'#0A2457'};
-  const val=(j,t)=>{const x=L.filter(l=>l.tanggal===t&&l.jenis===j);return x.length?x[x.length-1].nilai:null};
-  if(ds.length){
-    mk('cTot',{type:'line',data:{labels:ds.map(fmtTgl),datasets:[{label:'Total SKD',data:ds.map(t=>val('skd',t)),borderColor:'#1D5FE0',backgroundColor:'#1D5FE0',borderWidth:3,tension:.3,spanGaps:true,pointRadius:5,segment:{borderColor:c=>c.p1.parsed.y>=c.p0.parsed.y?'#0FA968':'#E5484D'}},
-      {label:'Target '+T.skd,data:ds.map(()=>T.skd),borderColor:'#E5484D',borderDash:[6,5],borderWidth:1.5,pointRadius:0}]},options:{animation:{duration:1300},plugins:{legend:{labels:{usePointStyle:true}}},scales:GRID}});
-    const sets=[];['twk','tiu','tkp'].forEach(j=>{sets.push({label:j.toUpperCase(),data:ds.map(t=>val(j,t)),borderColor:col[j],backgroundColor:col[j],borderWidth:3,tension:.3,spanGaps:true,pointRadius:4});
-      sets.push({label:'Batas '+j.toUpperCase(),data:ds.map(()=>T[j]),borderColor:col[j],borderDash:[6,5],borderWidth:1.2,pointRadius:0})});
-    mk('cSkd',{type:'line',data:{labels:ds.map(fmtTgl),datasets:sets},options:{animation:{duration:1300},plugins:{legend:{labels:{usePointStyle:true,filter:i=>!/^Batas/.test(i.text)}}},scales:GRID}});
-  }
-  const all=allSoal(),cnt=s=>all.filter(x=>x.subtes===s).length,today0=D.jawaban.filter(j=>j.tanggal===today()).length;
-  $('bsS').textContent=`Bank soal: TWK ${cnt('TWK')}, TIU ${cnt('TIU')}, TKP ${cnt('TKP')} (termasuk ${CONTOH.length} soal contoh). Hari ini sudah ${today0} soal dikerjakan.`;
-  isiTopik(true);
-  const rows=statTopik();
-  $('qStat').innerHTML=rows.length?'<h3 class="lbl" style="margin-top:0">Topik terlemah lebih dulu</h3><table class="t"><tr><th>Subtes</th><th>Topik</th><th>Hasil</th></tr>'+rows.map(r=>`<tr><td>${esc(r.sub)}</td><td>${esc(r.top)}</td><td class="${r.sc<.6?'dn':r.sc>=.8?'up':''}">${esc(r.label)}</td></tr>`).join('')+'</table>':'<p class="msg">Statistik muncul setelah Anda mengerjakan soal.</p>';
-  if(!$('sOpt').innerHTML)formKunci();
-  const my=D.soal.slice(-30).reverse();
-  $('qList').innerHTML=my.length?'<h3 class="lbl">Soal saya ('+D.soal.length+')</h3>'+my.map(s=>`<div class="stk"><span><small class="msg">${esc(s.subtes)} ${esc(s.topik||'')}</small><br>${esc(String(s.pertanyaan).slice(0,90))}${s.pertanyaan.length>90?'...':''}</span><button class="btn ghost sm" onclick="hapusSoal(${Number(s.id)})">Hapus</button></div>`).join(''):'';
-}
-function isiTopik(keep){
-  const sub=$('qSub').value,cur=keep?$('qTop').value:'Semua',tops=[...new Set(allSoal().filter(s=>sub==='Semua'||s.subtes===sub).map(s=>s.topik))].sort();
-  $('qTop').innerHTML=['Semua'].concat(tops).map(t=>`<option ${t===cur?'selected':''}>${esc(t)}</option>`).join('');
-}
 async function simpanSkd(){
   const v=id=>Number($(id).value)||0,tg=$('sT').value||today(),a=v('sTwk'),b=v('sTiu'),c=v('sTkp');
   if(!a||!b||!c){$('msk').textContent='Isi skor TWK, TIU, dan TKP.';return}
@@ -1327,18 +1308,6 @@ function imporSoal(inp){
 }
 function acak(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 let Q=null;
-function mulaiQuiz(mode){
-  const sub=$('qSub').value,top=$('qTop').value,n=Number($('qN').value);
-  let pool=allSoal().filter(s=>(sub==='Semua'||s.subtes===sub)&&(top==='Semua'||s.topik===top));
-  if(mode==='ulang'){const w=salahRefs();pool=pool.filter(s=>w.has(s.ref))}
-  if(!pool.length){toast(mode==='ulang'?'Tidak ada soal yang salah untuk pilihan ini. Bagus!':'Belum ada soal untuk pilihan ini.');return}
-  runQuiz(mode,acak(pool).slice(0,n));
-}
-function runQuiz(mode,pool){
-  Q={mode,list:pool,i:0,ans:[],sec:mode==='tryout'?pool.length*60:0,qs:Date.now()};
-  $('qz').classList.add('on');$('qzT').textContent='';if(Q.sec){qTime();Q.tm=setInterval(qTick,1000)}
-  qView();
-}
 function qTime(){$('qzT').textContent='⏱ '+pad(Math.floor(Q.sec/60))+':'+pad(Q.sec%60)}
 function qTick(){Q.sec--;qTime();if(Q.sec<=0){clearInterval(Q.tm);toast('Waktu habis!');qSelesai()}}
 function qView(){
@@ -1362,29 +1331,165 @@ function qJawab(i){
   $('qzB').innerHTML=`<button class="btn white" onclick="qNext()">${Q.i+1<Q.list.length?'Soal berikutnya':'Lihat hasil'}</button>`;
 }
 function qNext(){Q.i++;if(Q.i>=Q.list.length)qSelesai();else qView()}
-async function qSelesai(){
-  clearInterval(Q.tm);const a=Q.ans,by={};
-  a.forEach(x=>{const k=x.s.subtes;by[k]=by[k]||{n:0,sk:0,ok:0};by[k].n++;by[k].sk+=x.sk;if(x.s.subtes==='TKP'?x.sk>=4:x.sk>=5)by[k].ok++});
-  const tot=a.reduce((s,x)=>s+x.sk,0),max=Q.list.length*5,pct=max?tot/max:0,blank=Q.list.length-a.length;
-  const comment=pct<.5?['Masih jauh dari cukup. Ulangi soal yang salah sekarang juga!',1]:pct<.75?['Lumayan, tetapi belum aman. Kerjakan lagi topik yang salah.',0]:['Bagus. Pertahankan, lalu naikkan tingkat kesulitannya.',0];
-  let h=`<div class="gn" style="font-size:64px">${tot}</div><p>dari ${max} poin${blank?', '+blank+' soal tidak terjawab':''}</p>`+
-    Object.keys(by).map(k=>`<p>${k}: ${by[k].sk} poin, ${by[k].ok} dari ${by[k].n} ${k==='TKP'?'bernilai 4 atau 5':'benar'}</p>`).join('')+
-    `<div class="say ${comment[1]?'mad':''}">${comment[0]}</div>`;
-  if(Q.mode==='tryout'){const salah=a.filter(x=>!(x.s.subtes==='TKP'?x.sk>=4:x.sk>=5));
-    if(salah.length)h+='<h2 style="text-align:left">Pembahasan</h2>'+salah.map(x=>{const top=Math.max(...x.s.nilai.map(Number)),bi=x.s.nilai.map(Number).indexOf(top);
-      return `<div class="qexp"><b>${esc(x.s.pertanyaan)}</b>\nJawabanmu: ${'ABCDE'[x.i]}. ${esc(x.s.pilihan[x.i])}\nTerbaik: ${'ABCDE'[bi]}. ${esc(x.s.pilihan[bi])}${x.s.pembahasan?'\n'+esc(x.s.pembahasan):''}</div>`}).join('')}
-  $('qzP').textContent='Hasil';$('qzT').textContent='';$('qzQ').textContent='';$('qzO').innerHTML='';$('qzE').innerHTML=h;
-  $('qzB').innerHTML='<button class="btn white" onclick="qTutup(true)">Selesai</button>';Q.done=true;
-  await new Promise(r=>setTimeout(r,600));await load();
-  const m=st.missions.find(x=>x.tipe==='skd');
-  if(m&&!m.done&&D.jawaban.filter(j=>j.tanggal===today()).length>=20){try{await selesaiMisi(m.id,10);await load();toast('20 soal hari ini. Misi SKD selesai ✓ +10 poin')}catch(e){}}
-}
-function qTutup(force){if(Q&&!Q.done&&Q.ans.length&&!force){qSelesai();return}if(Q)clearInterval(Q.tm);$('qz').classList.remove('on');Q=null;if(TAB==='skd'&&st)renderSkd()}
 
 /* ---------- Mulai ---------- */
 try{const t=localStorage.getItem('tab');if(t&&$('tab-'+t))TAB=t}catch(e){}
 goTab(TAB);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+/* ---------- SKD versi sederhana: guru, kelemahan, tryout, materi ---------- */
+const GEN_TOPIK=new Set(Object.keys(GEN));
+const AMBANG={TWK:65/150,TIU:80/175,TKP:166/225};
+const TRYOUT={mini:{judul:'Tryout mini',twk:6,tiu:7,tkp:9,menit:20},setengah:{judul:'Tryout setengah',twk:15,tiu:18,tkp:22,menit:50}};
+const skorJ=j=>j.subtes==='TKP'?(j.skor||0)/5:(benarJ(j)?1:0);
+function statSub(list){
+  const r={};['TWK','TIU','TKP'].forEach(s=>{const a=(list||D.jawaban).filter(j=>j.subtes===s);r[s]={n:a.length,p:a.length?a.reduce((x,j)=>x+skorJ(j),0)/a.length:null}});return r;
+}
+function statTopikDari(list){
+  const g={};list.forEach(j=>{const k=j.subtes+'|'+(j.topik||'Lainnya');(g[k]=g[k]||[]).push(j)});
+  return Object.keys(g).map(k=>{const a=g[k],[sub,top]=k.split('|');return {sub,top,n:a.length,sc:a.reduce((x,j)=>x+skorJ(j),0)/a.length}}).sort((a,b)=>a.sc-b.sc);
+}
+const persen=p=>p==null?'-':Math.round(p*100)+'%';
+// ambil soal: generator untuk topik hitungan TIU, sisanya dari bank (yang jarang dikerjakan lebih dulu)
+function ambilSoal(sub,top,n){
+  const cnt={};D.jawaban.forEach(j=>cnt[j.soal_ref]=(cnt[j.soal_ref]||0)+1);
+  let bank=allSoal().filter(s=>s.subtes===sub&&(!top||s.topik===top));
+  bank=acak(bank).sort((a,b)=>(cnt[a.ref]||0)-(cnt[b.ref]||0));
+  const out=[],genOk=sub==='TIU'&&(!top||GEN_TOPIK.has(top));
+  const nb=genOk?Math.min(bank.length,Math.floor(n/2)):Math.min(bank.length,n);
+  out.push(...bank.slice(0,nb));
+  while(genOk&&out.length<n){const o=genSoal(top||'Semua');if(!o)break;out.push(o)}
+  return acak(out);
+}
+/* ---------- Tugas dari guru ---------- */
+function tugasHariIni(){
+  const t0=today(),past=D.jawaban.filter(j=>j.tanggal<t0),tes=st.missions.some(m=>m.tipe==='skd'&&/Tryout/.test(m.teks));
+  if(tes)return {jenis:'tryout',msg:'Hari ini jadwal tes mingguan. Kerjakan tryout mini untuk mengukur perkembanganmu.',buckets:[{sub:'TWK',n:6},{sub:'TIU',n:7},{sub:'TKP',n:9}],sec:20*60};
+  if(past.length<30)return {jenis:'latihan',msg:'Guru belum cukup mengenal kemampuanmu. Kerjakan 15 soal campuran dulu, supaya kelemahanmu kelihatan.',buckets:[{sub:'TWK',n:5},{sub:'TIU',n:5},{sub:'TKP',n:5}]};
+  const tp=statTopikDari(past).filter(t=>t.n>=3),ss=statSub(past);
+  const gap=s=>ss[s].p==null?-1:ss[s].p-AMBANG[s],lemahSub=['TWK','TIU','TKP'].sort((a,b)=>gap(a)-gap(b))[0];
+  const b=[];let msg='';
+  if(tp[0]){b.push({sub:tp[0].sub,top:tp[0].top,n:10});msg=`Fokus hari ini: ${tp[0].sub} ${tp[0].top}, karena hasilmu baru ${persen(tp[0].sc)} dari ${tp[0].n} soal.`}
+  if(tp[1]){b.push({sub:tp[1].sub,top:tp[1].top,n:5});msg+=` Lalu ${tp[1].sub} ${tp[1].top} (${persen(tp[1].sc)}).`}
+  const sisa=20-b.reduce((x,y)=>x+y.n,0);b.push({sub:lemahSub,n:sisa});msg+=` Tutup dengan ${sisa} soal campuran ${lemahSub}, subtes yang hasilnya paling perlu dikejar.`;
+  return {jenis:'latihan',msg:msg.trim(),buckets:b};
+}
+function progresTugas(T){
+  const pool=D.jawaban.filter(j=>j.tanggal===today()).map(j=>({...j,u:0}));
+  return T.buckets.map(b=>{let d=0;for(const j of pool){if(d>=b.n)break;if(!j.u&&j.subtes===b.sub&&(!b.top||j.topik===b.top)){j.u=1;d++}}return d});
+}
+function renderTugas(){
+  const T=tugasHariIni(),pr=progresTugas(T),tot=T.buckets.reduce((x,b)=>x+b.n,0),dn=pr.reduce((x,y)=>x+y,0),sel=dn>=tot;
+  $('tgMsg').textContent=sel?'Tugas hari ini selesai. Kerja bagus! Kalau masih semangat, latih kelemahanmu di bawah.':T.msg;
+  $('tgS').textContent=dn+' / '+tot+' soal';
+  $('tgList').innerHTML=T.buckets.map((b,i)=>`<div class="stk"><span>${pr[i]>=b.n?'✅':'⬜'} ${b.n} soal ${b.sub}${b.top?' '+esc(b.top):' campuran'}</span><b>${pr[i]}/${b.n}</b></div>`).join('');
+  $('tgB').style.width=Math.min(100,dn/tot*100)+'%';
+  $('tgBtn').textContent=sel?'Latihan tambahan':dn?'Lanjutkan tugas':'Mulai tugas hari ini';
+}
+function mulaiTugas(){
+  const T=tugasHariIni(),pr=progresTugas(T);let list=[];
+  T.buckets.forEach((b,i)=>{const sisa=b.n-pr[i];if(sisa>0)list.push(...ambilSoal(b.sub,b.top,sisa))});
+  if(!list.length){const w=statTopikDari(D.jawaban).filter(t=>t.n>=3)[0];list=w?ambilSoal(w.sub,w.top,10):ambilSoal('TIU',null,10)}
+  if(!list.length){toast('Bank soal masih kosong. Impor file soal dulu.');return}
+  runQuiz(T.jenis==='tryout'?'tryout':'latihan',T.jenis==='tryout'?list:list,{judul:'Tugas dari guru',info:T.msg,sec:T.sec||0,tryoutKey:T.jenis==='tryout'?'mini':null});
+}
+/* ---------- Kelemahan ---------- */
+function renderLemah(){
+  const s=statSub(),tp=statTopikDari(D.jawaban).filter(t=>t.n>=3).slice(0,3),w=salahRefs(),wb=allSoal().filter(x=>w.has(x.ref)).length;
+  if(!D.jawaban.length){$('lemah').innerHTML='<p class="msg">Belum ada data. Kerjakan tugas dari guru dulu, nanti kelemahanmu muncul di sini.</p>';return}
+  let h=['TWK','TIU','TKP'].map(k=>{const p=s[k].p,ok=p!=null&&p>=AMBANG[k];return `<div class="tr"><div class="trh"><span><b>${k}</b> <small class="msg">${s[k].n} soal</small></span><b class="${p==null?'':ok?'up':'dn'}">${persen(p)} ${p==null?'':ok?'aman':'di bawah ambang'}</b></div><div class="bar lm"><i style="width:${p==null?0:p*100}%"></i><em style="left:${AMBANG[k]*100}%"></em></div></div>`}).join('');
+  h+='<p class="msg" style="margin-top:6px">Garis tegak adalah ambang batas kelulusan subtes itu.</p>';
+  if(tp.length)h+='<h3 class="lbl">Materi paling lemah</h3>'+tp.map(t=>`<div class="stk"><span>${esc(t.sub)} ${esc(t.top)}<br><small class="dn">${persen(t.sc)} dari ${t.n} soal</small></span><button class="btn ghost sm" onclick="latihMateri('${t.sub}','${esc(t.top).replace(/'/g,"\\'")}')">Latih 10 soal</button></div>`).join('');
+  if(wb)h+=`<div class="row"><button class="btn ghost" onclick="ulangSalah()">Ulangi ${wb} soal yang pernah salah</button></div>`;
+  $('lemah').innerHTML=h;
+}
+function ulangSalah(){const w=salahRefs(),pool=acak(allSoal().filter(x=>w.has(x.ref))).slice(0,10);if(!pool.length){toast('Tidak ada soal yang salah. Bagus!');return}runQuiz('ulang',pool,{judul:'Ulangi soal yang salah',info:'Soal-soal yang pernah kamu jawab salah. Baca pembahasannya pelan-pelan.'})}
+/* ---------- Tryout dan materi ---------- */
+function pilihTryout(){
+  modal(`<h2>📝 Pilih tryout</h2><p class="sub">Jawaban dan pembahasan baru muncul setelah selesai, seperti tes asli. Skornya dikonversi ke skala SKD.</p>
+  ${Object.entries(TRYOUT).map(([k,t])=>`<button class="tile wide" onclick="tutupModal();mulaiTryout('${k}')"><b>${t.judul}</b><small>${t.twk+t.tiu+t.tkp} soal, ${t.menit} menit (TWK ${t.twk}, TIU ${t.tiu}, TKP ${t.tkp})</small></button>`).join('')}
+  <div class="row"><button class="btn ghost" onclick="tutupModal()">Batal</button></div>`);
+}
+function mulaiTryout(k){
+  const t=TRYOUT[k],list=[...ambilSoal('TWK',null,t.twk),...ambilSoal('TIU',null,t.tiu),...ambilSoal('TKP',null,t.tkp)];
+  runQuiz('tryout',list,{judul:t.judul,info:`TWK ${t.twk}, TIU ${t.tiu}, TKP ${t.tkp} soal. Kerjakan berurutan seperti tes asli. Jangan terlalu lama di satu soal.`,sec:t.menit*60,tryoutKey:k});
+}
+function pilihMateri(){
+  const st2=statTopikDari(D.jawaban),sc={};st2.forEach(t=>sc[t.sub+'|'+t.top]=t);
+  const all=allSoal(),h=['TIU','TWK','TKP'].map(sub=>{
+    const tops=[...new Set(all.filter(s=>s.subtes===sub).map(s=>s.topik).concat(sub==='TIU'?[...GEN_TOPIK]:[]))].sort();
+    return `<h3 class="lbl">${sub}</h3>`+tops.map(t=>{const n=all.filter(s=>s.subtes===sub&&s.topik===t).length,x=sc[sub+'|'+t],inf=sub==='TIU'&&GEN_TOPIK.has(t);
+      return `<button class="mtr" onclick="tutupModal();latihMateri('${sub}','${esc(t).replace(/'/g,"\\'")}')"><span>${esc(t)}<small>${inf?'soal tak terbatas':n+' soal'}</small></span><b class="${x?(x.sc<.6?'dn':x.sc>=.8?'up':''):''}">${x?persen(x.sc):'baru'}</b></button>`}).join('')}).join('');
+  modal(`<h2>📚 Belajar per materi</h2><p class="sub">Pilih materi. Setiap sesi 10 soal, pembahasan muncul setelah kamu menjawab.</p>${h}<div class="row"><button class="btn ghost" onclick="tutupModal()">Tutup</button></div>`);
+}
+function latihMateri(sub,top){
+  const list=ambilSoal(sub,top,10);if(!list.length){toast('Belum ada soal untuk materi ini.');return}
+  runQuiz('latihan',list,{judul:sub+' '+top,info:'10 soal dengan pembahasan setelah setiap jawaban. Pahami caranya, bukan sekadar kuncinya.'});
+}
+/* ---------- Kuis dengan layar "siap" ---------- */
+function runQuiz(mode,pool,o){
+  o=o||{};
+  Q={mode,list:pool,i:0,ans:[],sec:mode==='tryout'?(o.sec||pool.length*60):0,qs:Date.now(),judul:o.judul||'Latihan',info:o.info||'',tryoutKey:o.tryoutKey||null,mulai:false};
+  $('qz').classList.add('on');qSiap();
+}
+function qSiap(){
+  $('qzP').textContent=Q.judul;$('qzT').textContent='';$('qzQ').textContent='';
+  $('qzO').innerHTML='<div class="siap"><div class="napas"></div><p id="napT">Tarik napas...</p></div>';
+  $('qzE').innerHTML=`<div class="qexp"><b>${Q.list.length} soal${Q.sec?', waktu '+Math.round(Q.sec/60)+' menit':', pembahasan setelah tiap jawaban'}</b>\n${esc(Q.info)}</div>`;
+  $('qzB').innerHTML='<button class="btn white" onclick="qMulai()">Saya siap</button><button class="pill" onclick="qTutup(true)">Nanti dulu</button>';
+  let f=0;Q.nap=setInterval(()=>{f=1-f;const e=$('napT');if(e)e.textContent=f?'Hembuskan pelan...':'Tarik napas...'},4000);
+}
+function qMulai(){
+  clearInterval(Q.nap);let n=3;$('qzE').innerHTML='';$('qzB').innerHTML='';
+  $('qzO').innerHTML='<div class="gn cdn" id="cdn3">3</div>';
+  Q.cd=setInterval(()=>{n--;if(n>0){$('cdn3').textContent=n;return}clearInterval(Q.cd);Q.mulai=true;Q.qs=Date.now();
+    if(Q.sec){qTime();Q.tm=setInterval(qTick,1000)}qView()},800);
+}
+async function qSelesai(){
+  clearInterval(Q.tm);const a=Q.ans,by={};
+  a.forEach(x=>{const k=x.s.subtes;by[k]=by[k]||{n:0,sk:0,ok:0};by[k].n++;by[k].sk+=x.sk;if(x.s.subtes==='TKP'?x.sk>=4:x.sk>=5)by[k].ok++});
+  const tot=a.reduce((s,x)=>s+x.sk,0),max=Q.list.length*5,pct=max?tot/max:0,blank=Q.list.length-a.length;
+  let h='';
+  if(Q.tryoutKey){
+    const t=TRYOUT[Q.tryoutKey],n={TWK:t.twk,TIU:t.tiu,TKP:t.tkp},full={TWK:150,TIU:175,TKP:225},est={};
+    ['TWK','TIU','TKP'].forEach(k=>est[k]=Math.round(((by[k]?by[k].sk:0)/(n[k]*5))*full[k]));
+    const T=TG(),total=est.TWK+est.TIU+est.TKP,gagal=['TWK','TIU','TKP'].filter(k=>est[k]<T[k.toLowerCase()]);
+    h=`<div class="gn" style="font-size:64px">${total}</div><p>perkiraan skor SKD (skala 550)</p>`+['TWK','TIU','TKP'].map(k=>`<p>${k}: <b class="${est[k]>=T[k.toLowerCase()]?'':'dn'}">${est[k]}</b> (ambang ${T[k.toLowerCase()]})</p>`).join('')+
+      `<div class="say ${gagal.length||total<T.skd?'mad':''}">${gagal.length?(gagal.length>1?gagal.slice(0,-1).join(', ')+' dan '+gagal[gagal.length-1]:gagal[0])+' masih di bawah ambang batas. Itu prioritas latihanmu.':total>=T.skd?'Lolos semua ambang dan melewati target '+T.skd+'. Pertahankan!':'Semua ambang lolos, tetapi masih kurang '+(T.skd-total)+' dari target '+T.skd+'.'}</div>`;
+    Q.est={...est,total};
+  }else{
+    const comment=pct<.5?['Masih jauh dari cukup. Ulangi soal yang salah sekarang juga!',1]:pct<.75?['Lumayan, tetapi belum aman. Ulangi materi ini besok.',0]:['Bagus. Pertahankan, lalu coba materi lain.',0];
+    h=`<div class="gn" style="font-size:64px">${a.filter(x=>x.s.subtes==='TKP'?x.sk>=4:x.sk>=5).length}/${Q.list.length}</div><p>jawaban benar${blank?', '+blank+' soal tidak terjawab':''}</p><div class="say ${comment[1]?'mad':''}">${comment[0]}</div>`;
+  }
+  if(Q.mode==='tryout'){const salah=a.filter(x=>!(x.s.subtes==='TKP'?x.sk>=4:x.sk>=5));
+    if(salah.length)h+='<h2 style="text-align:left">Pembahasan soal yang salah</h2>'+salah.map(x=>{const top=Math.max(...x.s.nilai.map(Number)),bi=x.s.nilai.map(Number).indexOf(top);
+      return `<div class="qexp"><b>${esc(x.s.pertanyaan)}</b>\nJawabanmu: ${'ABCDE'[x.i]}. ${esc(x.s.pilihan[x.i])}\nTerbaik: ${'ABCDE'[bi]}. ${esc(x.s.pilihan[bi])}${x.s.pembahasan?'\n'+esc(x.s.pembahasan):''}</div>`}).join('')}
+  $('qzP').textContent='Hasil';$('qzT').textContent='';$('qzQ').textContent='';$('qzO').innerHTML='';$('qzE').innerHTML=h;
+  $('qzB').innerHTML='<button class="btn white" onclick="qTutup(true)">Selesai</button>';Q.done=true;
+  if(Q.est){const e=Q.est,tg=today();for(const [j,v] of [['twk',e.TWK],['tiu',e.TIU],['tkp',e.TKP],['skd',e.total]])if(v>0)try{await addLatihan({jenis:j,tanggal:tg,nilai:v,catatan:'Tryout aplikasi (perkiraan)'})}catch(err){}}
+  await new Promise(r=>setTimeout(r,600));await load();
+  const m=st.missions.find(x=>x.tipe==='skd');
+  if(m&&!m.done&&D.jawaban.filter(j=>j.tanggal===today()).length>=20){try{await selesaiMisi(m.id,10);await load();toast('20 soal hari ini. Misi SKD selesai ✓ +10 poin')}catch(e){}}
+}
+function qTutup(force){
+  if(Q&&!Q.done&&Q.ans.length&&!force){qSelesai();return}
+  if(Q){clearInterval(Q.tm);clearInterval(Q.nap);clearInterval(Q.cd)}
+  $('qz').classList.remove('on');Q=null;if(TAB==='skd'&&st)renderSkd();
+}
+function renderSkd(){
+  const T=TG();if(!$('sT').value)$('sT').value=today();
+  renderTugas();renderLemah();
+  const k=[['twk','TWK'],['tiu','TIU'],['tkp','TKP'],['skd','Total']];
+  $('skdK').innerHTML=k.map(a=>{const v=latest(a[0]),t=T[a[0]];return `<div class="kpi"><span>${a[1]} terakhir</span><b class="${v!=null&&v>=t?'up':v!=null?'dn':''}">${v==null?'-':v}</b><span>${v==null?'target '+t:v<t?'kurang '+(t-v)+' dari '+t:'lolos target '+t}</span></div>`}).join('');
+  const L=D.latihan,ds=[...new Set(L.filter(l=>['twk','tiu','tkp','skd'].includes(l.jenis)).map(l=>l.tanggal))].sort();
+  const val=(j,t)=>{const x=L.filter(l=>l.tanggal===t&&l.jenis===j);return x.length?x[x.length-1].nilai:null};
+  if(ds.length)mk('cTot',{type:'line',data:{labels:ds.map(fmtTgl),datasets:[{label:'Total SKD',data:ds.map(t=>val('skd',t)),borderColor:'#1D5FE0',backgroundColor:'#1D5FE0',borderWidth:3,tension:.3,spanGaps:true,pointRadius:5,segment:{borderColor:c=>c.p1.parsed.y>=c.p0.parsed.y?'#0FA968':'#E5484D'}},
+    {label:'Target '+T.skd,data:ds.map(()=>T.skd),borderColor:'#E5484D',borderDash:[6,5],borderWidth:1.5,pointRadius:0}]},options:{animation:{duration:1300},plugins:{legend:{labels:{usePointStyle:true}}},scales:GRID}});
+  const all=allSoal(),cnt=s=>all.filter(x=>x.subtes===s).length;
+  $('bsS').textContent=`TWK ${cnt('TWK')}, TIU ${cnt('TIU')} + soal hitungan tak terbatas, TKP ${cnt('TKP')}`;
+  if(!$('sOpt').innerHTML)formKunci();
+  const my=D.soal.slice(-30).reverse();
+  $('qList').innerHTML=my.length?'<h3 class="lbl">Soal saya ('+D.soal.length+')</h3>'+my.map(s=>`<div class="stk"><span><small class="msg">${esc(s.subtes)} ${esc(s.topik||'')}</small><br>${esc(String(s.pertanyaan).slice(0,90))}${s.pertanyaan.length>90?'...':''}</span><button class="btn ghost sm" onclick="hapusSoal(${Number(s.id)})">Hapus</button></div>`).join(''):'';
+}
 </script>
 </body>
 </html>
