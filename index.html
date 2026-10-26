@@ -54,6 +54,10 @@ button.pill:hover{background:#fff;color:var(--blue)}
 .jd b{width:66px;flex:none;font:700 14px Sora,system-ui,sans-serif}.jd b small,.jd span small{display:block;font:500 11px 'Plus Jakarta Sans',system-ui,sans-serif;color:var(--mut)}
 .jd span{flex:1;font-size:14px}.jd em{font-style:normal}.jd.now{border-color:var(--blue);background:var(--ice)}.jd.off{opacity:.5}
 .jd[open]{padding-bottom:10px}.jd .sub,.jdl{padding:0 14px}.jdl{margin:4px 0 0 14px;font-size:13px;line-height:1.7;color:var(--navy)}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;padding:4px 2px;margin-top:8px}
+.bub{max-width:85%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap}
+.bub.c{align-self:flex-start;background:var(--ice);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.u{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:4px}
 .guru{background:linear-gradient(135deg,#fff 60%,#EAF3FF);border:1.5px solid #BFD6FB}
 .btn.big{padding:15px 22px;font-size:16px;width:100%}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
@@ -173,7 +177,7 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
   <section class="tab" id="tab-hari">
     <section class="card"><div class="hd"><h2 id="pgT">Program menuju SKD</h2><span class="msg" id="pgS"></span></div>
       <div class="bar" style="margin-top:8px"><i id="pgB"></i></div><div id="mis"></div>
-      <div class="row"><button class="btn ghost" onclick="formBola()">⚽ Saya main bola atau futsal</button><button class="btn ghost" onclick="goTab('kal')">📅 Lihat jadwal minggu ini</button></div></section>
+      <div class="row"><button class="btn" onclick="tanyaCoach()">💬 Tanya coach</button><button class="btn ghost" onclick="formBola()">⚽ Catat futsal</button><button class="btn ghost" onclick="goTab('kal')">📅 Lihat jadwal minggu ini</button></div></section>
 
     <section class="card guru"><h2>👨‍🏫 Guru SKD</h2><p class="sub">Tugas belajar hari ini, terpisah dari latihan fisik.</p><div id="guruHari"></div></section>
 
@@ -289,7 +293,7 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
       <label class="lbl">Profil singkat untuk konsultasi<input id="pProf" placeholder="Usia, tinggi, berat, keluhan, kebiasaan makan"></label>
       <div class="row"><button class="btn" onclick="simpanProfil()">Simpan</button><span class="msg" id="mpr"></span></div></section>
 
-    <section class="card"><h2>Konsultasi dengan Claude</h2><p class="sub">Aplikasi menyusun ringkasan data latihan Anda. Tempel ringkasan itu di chat Claude untuk saran kesehatan, pola makan, atau strategi belajar. Tidak perlu kunci API.</p>
+    <section class="card"><h2>Konsultasi mendalam</h2><p class="sub">Untuk mengubah jadwal latihan, pakai <b>💬 Tanya coach</b> di menu Hari ini. Bagian ini untuk pertanyaan panjang (pola makan, keluhan, strategi belajar): aplikasi menyalin ringkasan datamu untuk ditanyakan ke Claude.</p>
       <div class="lbl">Topik</div><div class="opts" data-n="kmode">
         <button type="button" class="opt on" data-v="umum" onclick="pickOpt(this)">Umum</button>
         <button type="button" class="opt" data-v="makan" onclick="pickOpt(this)">Pola makan</button>
@@ -448,11 +452,11 @@ const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 function sesiMenit(sf){return Math.round((sf||[]).reduce((a,s)=>a+(s.k==='reps'?40:s.k==='input'?20:s.sec||0),0)/60)}
 function plan(day,o){
   o=o||{};const pi=prog(),F=o.fct||1,ph=fase(day,pi.total),w=Math.ceil(day/7),taper=ph==='Pengurangan',left=pi.total-day;
-  const tg=addDays(P.mulai||today(),day-1),dow=new Date(tg+'T12:00:00').getDay();
+  const tg=addDays(P.mulai||today(),day-1),realDow=new Date(tg+'T12:00:00').getDay(),JJ=(P.target&&P.target.jadwal)||{},dow=(JJ.tukar&&tg in JJ.tukar)?Number(JJ.tukar[tg]):realDow,pendek=!!(JJ.pendek&&JJ.pendek[tg]);
   const pi_=['Dasar','Bangun','Puncak','Pengurangan'].indexOf(ph);
-  const pm=[.55,.65,.75,.4][pi_],sn=[3,4,4,2][pi_];
+  const pm=[.55,.65,.75,.4][pi_],sn=Math.max(2,[3,4,4,2][pi_]-(pendek?1:0));
   const bf=o.bola&&[1,3,4].includes(dow)?.7:1;
-  const rp=j=>Math.max(1,Math.round(maxNow(j)*pm*F*bf));
+  const rp=j=>Math.max(1,Math.round(maxNow(j)*pm*F*bf*(pendek?.6:1)));
   const kaki=o.kaki;                                   // telapak kaki sedang nyeri: lari diganti sepeda
   const pem=T_('Pemanasan: jalan cepat, putar sendi, peregangan dinamis',300,'Jangan lewati pemanasan. Cedera menghambat targetmu.');
   const pend=T_('Pendinginan: jalan pelan, peregangan betis dan telapak kaki',240,'Tarik jari kaki ke arah tulang kering, tahan 30 detik tiap kaki.');
@@ -465,6 +469,9 @@ function plan(day,o){
   let tipe,judul,tf,sf;
   if(left<=0){tipe='istirahat';judul='Hari tes';tf='Hari tes. Datang lebih awal, makan secukupnya, percaya pada latihanmu.';sf=[T_('Peregangan ringan dan napas tenang',300,'Hari ini bukan untuk latihan berat.')]}
   else if(left===1){tipe='istirahat';judul='Istirahat';tf='Istirahat total sebelum tes. Jalan santai 15 menit, siapkan berkas, tidur cepat.';sf=[T_('Jalan santai',900,'Simpan tenagamu untuk besok.')]}
+  else if(dow===7){tipe='istirahat';judul='Istirahat aktif';tf='Istirahat aktif: jalan santai 15 menit dan peregangan seluruh tubuh 10 menit.';
+    sf=[T_('Jalan santai',900,'Pelan saja, sambil atur napas.'),T_('Peregangan seluruh tubuh',600,'Tahan tiap gerakan 30 detik, jangan sampai sakit.')]}
+  else if(dow===8){tipe='lari';judul='Sepeda santai';const m=pendek?20:Math.min(45,25+2*w);tf=`Bersepeda santai ${m} menit, napas masih bisa ngobrol.`;sf=sepeda(m)}
   else if(dow===1){tipe='kekuatan';judul='Upper body A';
     tf=`Push up ${sn} x ${rp('pushup')}, ${pullTeks(sn)}, sit up ${sn} x ${rp('situp')}, plank 3 x ${Math.min(60,30+5*w)} detik.`;
     sf=[pem].concat(sets_('Push up',sn,rp('pushup'),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(90)],pullBlok(sn),[Z_(90)],
@@ -510,7 +517,7 @@ function plan(day,o){
     sf=[T_('Renang santai atau jalan santai '+m+' menit',m*60,'Pelan dan rileks. Jangan berenang sendirian tanpa pengawas.'),I_('renang','Perkiraan berapa meter yang kamu renangi? (kalau jalan, tekan Tidak diukur)'),
       T_('Peregangan panjang: betis, paha, punggung, bahu',600,'Tahan setiap gerakan 30 detik.')];
   }
-  const tryout=dow===0&&left>1;
+  const tryout=realDow===0&&left>1;
   const s=left<=1?'Guru SKD: baca catatan ringan saja, jangan belajar materi baru.':tryout?'Guru SKD: tryout mini 22 soal (20 menit) di menu SKD.':'Guru SKD: kerjakan tugas hari ini, 20 soal di menu SKD.';
   const p='Peregangan leher dan telapak kaki 7 menit, minum air 2 liter, tidur minimal 7 jam.';
   const ps=[T_('Chin tuck: tarik dagu lurus ke belakang, tahan 5 detik, ulangi 10 kali',60,'Pandangan lurus ke depan, jangan menunduk.'),
@@ -518,7 +525,8 @@ function plan(day,o){
     T_('Tarik jari kaki kanan ke arah tulang kering, tahan',30,'Ini peregangan untuk plantar fasciitis. Lakukan juga saat bangun tidur.'),T_('Tarik jari kaki kiri, tahan',30,''),
     T_('Gulingkan botol air dingin di bawah telapak kaki kanan',60,'Tekan pelan, jangan sampai sakit.'),T_('Gulingkan botol di bawah telapak kaki kiri',60,''),
     T_('Peregangan betis di dinding, kanan lalu kiri',60,'Tumit tetap menempel lantai.')];
-  return [{id:day+'-f',teks:tf,sesi:sf,tipe,judul,menit:sesiMenit(sf),tg,dow},{id:day+'-s',teks:s,sesi:null,tipe:'skd',tryout},{id:day+'-p',teks:p,sesi:ps,tipe:'pulih'}];
+  if(pendek)judul+=' (versi pendek)';
+  return [{id:day+'-f',teks:tf,sesi:sf,tipe,judul,menit:sesiMenit(sf),tg,dow:realDow,ditukar:dow!==realDow},{id:day+'-s',teks:s,sesi:null,tipe:'skd',tryout},{id:day+'-p',teks:p,sesi:ps,tipe:'pulih'}];
 }
 const cntDay=d=>['f','s','p'].filter(x=>DONE.has(d+'-'+x)).length;
 const harianOf=t=>HMAP[t]||null;
@@ -674,7 +682,7 @@ function banner(){
 function misiRow(m){
   const bolaFis=m.done&&m.id.endsWith('-f')&&D.checkin.some(c=>isBola(c)&&diffDays(P.mulai,c.tanggal)+1===Number(m.id.split('-')[0]));
   const lab=m.done?(bolaFis?'⚽':'✓'):'▶ Mulai';
-  const tag=(m.judul?m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
+  const tag=(m.judul?(m.ditukar?'🔄 ':'')+m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
   return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':m.tipe==='skd'?`onclick="mulaiTugas()"`:`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
 }
 function renderMisi(){
@@ -862,7 +870,7 @@ function renderJadwal(){
   for(let i=0;i<7;i++){const tg=addDays(ws,i),dn=diffDays(P.mulai,tg)+1;
     if(dn<1||dn>pi.total){h+=`<div class="jd off"><b>${HARI[(i+1)%7]}</b><span>Di luar program</span></div>`;continue}
     const pl=plan(dn,{kaki:st.kaki}),f=pl[0],dn_=DONE.has(dn+'-f'),lewat=tg<t0;
-    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${esc(f.judul)}<small>±${f.menit} menit${pl[1].tryout?', SKD: tryout mini':', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
+    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${f.ditukar?'🔄 ':''}${esc(f.judul)}<small>±${f.menit} menit${pl[1].tryout?', SKD: tryout mini':', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
       <p class="sub" style="margin:8px 0 4px">${esc(f.teks)}</p><ol class="jdl">${f.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol></details>`}
   box.innerHTML=h;
 }
@@ -973,7 +981,7 @@ function renderPro(){
 async function simpanProfil(){
   const num=id=>{const v=$(id).value;return v===''?null:Number(v)},t={},awal={};
   Object.keys(TG_DEF).forEach(k=>t[k]=num('t_'+k));['pushup','situp','pullup','lari12'].forEach(k=>awal[k]=num('a_'+k));
-  const {error}=await db.from('profil').upsert({user_id:USER.id,target:{t,awal,profil:$('pProf').value||''},tgl_tes:$('pTes').value||null},{onConflict:'user_id'});
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target:{...(P.target||{}),t,awal,profil:$('pProf').value||''},tgl_tes:$('pTes').value||null},{onConflict:'user_id'});
   if(error){$('mpr').textContent=/target|tgl_tes/.test(error.message)?'Jalankan dulu update-3.sql di Supabase.':error.message;return}
   $('mpr').textContent='';await refresh();toast('Profil tersimpan ✓');
 }
@@ -1544,6 +1552,92 @@ function renderSkd(){
   if(!$('sOpt').innerHTML)formKunci();
   const my=D.soal.slice(-30).reverse();
   $('qList').innerHTML=my.length?'<h3 class="lbl">Soal saya ('+D.soal.length+')</h3>'+my.map(s=>`<div class="stk"><span><small class="msg">${esc(s.subtes)} ${esc(s.topik||'')}</small><br>${esc(String(s.pertanyaan).slice(0,90))}${s.pertanyaan.length>90?'...':''}</span><button class="btn ghost sm" onclick="hapusSoal(${Number(s.id)})">Hapus</button></div>`).join(''):'';
+}
+/* ---------- Tanya coach: ubah jadwal langsung di aplikasi ---------- */
+const AKT={0:'Renang recovery',1:'Upper body A',2:'Lari interval',3:'Leg day + shuttle',4:'Upper body B + sepeda',5:'Lari santai',6:'Futsal',7:'Istirahat aktif',8:'Sepeda santai'};
+function jadwalObj(){const j=(P.target&&P.target.jadwal)||{};return {tukar:{...(j.tukar||{})},pasang:{...(j.pasang||{})},pendek:{...(j.pendek||{})}}}
+function templateOf(tg){const j=jadwalObj();return tg in j.tukar?Number(j.tukar[tg]):new Date(tg+'T12:00:00').getDay()}
+async function simpanJadwal(J){
+  const target={...(P.target||{}),jadwal:J};
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target},{onConflict:'user_id'});
+  if(error)throw new Error(/target/.test(error.message)?'Jalankan dulu update-3.sql di Supabase.':error.message);
+  await refresh();
+}
+const dnOf=tg=>diffDays(P.mulai,tg)+1;
+function bisaUbah(tg){const dn=dnOf(tg),pi=prog();return dn>=1&&dn<=pi.total-2&&!DONE.has(dn+'-f')}
+const labelTg=tg=>HARI[new Date(tg+'T12:00:00').getDay()]+' '+(fmtTgl(tg).split(', ')[1]||'');
+async function ubahJadwal(akt){
+  const t0=today();
+  if(!P.mulai)return ['Program belum dimulai. Mulai dulu di menu Hari ini.',0];
+  if(!bisaUbah(t0))return [DONE.has(st.day+'-f')?'Latihan hari ini sudah selesai, jadi jadwalnya tidak diubah. Kerja bagus!':'Menjelang hari tes, jadwal tidak bisa ditukar. Ikuti jadwal yang ada.',0];
+  const J=jadwalObj();
+  // kalau hari ini sudah pernah ditukar, kembalikan dulu pasangannya supaya jadwal tidak kacau
+  const p0=J.pasang[t0];if(p0){delete J.tukar[p0];delete J.pasang[p0]}delete J.pasang[t0];delete J.tukar[t0];
+  const asli=t=>t in J.tukar?Number(J.tukar[t]):new Date(t+'T12:00:00').getDay();
+  const cur=asli(t0);
+  if(akt===cur){const ada=p0||(t0 in jadwalObj().tukar);if(ada){await simpanJadwal(J);return [`Oke, hari ini kembali ke jadwal asli: ${AKT[akt]}.`,1]}return [`Hari ini memang jadwalnya ${AKT[akt]}. Lanjutkan sesuai rencana.`,0]}
+  // cari hari dalam 6 hari ke depan yang jadwalnya sama dengan pilihanmu, lalu tukar
+  let tujuan=null;
+  for(let i=1;i<=6;i++){const d=addDays(t0,i);if(bisaUbah(d)&&asli(d)===akt){tujuan=d;break}}
+  if(!tujuan)for(let i=1;i<=6;i++){const d=addDays(t0,i),tp=asli(d);if(bisaUbah(d)&&(tp===0||tp===5)&&tp!==cur){tujuan=d;break}}
+  const lama=AKT[cur];
+  J.tukar[t0]=akt;delete J.pendek[t0];
+  if(tujuan){const lamaT=asli(tujuan);J.tukar[tujuan]=cur;J.pasang[t0]=tujuan;J.pasang[tujuan]=t0;
+    await simpanJadwal(J);
+    return [`Oke. Hari ini jadi ${AKT[akt]}. ${lama} dipindah ke ${labelTg(tujuan)}${lamaT!==akt?', menggantikan '+AKT[lamaT]:''}. Misi hari ini sudah diganti.`,1]}
+  await simpanJadwal(J);
+  return [`Oke. Hari ini jadi ${AKT[akt]}. Tidak ada hari kosong yang pas minggu ini, jadi ${lama} dilewati dulu. Minggu depan jadwal kembali normal.`,1];
+}
+async function jadwalPendek(){
+  if(!bisaUbah(today()))return ['Latihan hari ini sudah selesai atau sudah dekat hari tes.',0];
+  const J=jadwalObj();J.pendek[today()]=true;await simpanJadwal(J);
+  return ['Oke. Latihan hari ini dipadatkan jadi versi pendek: jumlah set dan repetisi dikurangi. Yang penting tetap bergerak, jangan kosong.',1];
+}
+async function kembalikanJadwal(){
+  const t0=today(),J=jadwalObj(),p=J.pasang[t0];
+  if(!(t0 in J.tukar)&&!J.pendek[t0])return ['Jadwal hari ini masih yang asli.',0];
+  delete J.tukar[t0];delete J.pendek[t0];if(p){delete J.tukar[p];delete J.pasang[p]}delete J.pasang[t0];
+  await simpanJadwal(J);return ['Jadwal hari ini dikembalikan seperti semula.',1];
+}
+const NYERI_KATA=/nyeri|sakit|cedera|keseleo|pusing|demam|flu|batuk|sesak|tumit|plantar/;
+async function balasCoach(teks){
+  const t=(teks||'').toLowerCase();
+  if(/dada|sesak|pingsan|pusing berat/.test(t))return ['Hentikan latihan hari ini. Nyeri dada, sesak, atau pusing berat harus diperiksakan ke dokter atau fasilitas kesehatan secepatnya. Jangan latihan dulu sebelum diperiksa.',0,'stop'];
+  if(NYERI_KATA.test(t)){const r=await ubahJadwal(7);return ['Tubuhmu lebih penting dari jadwal. '+r[0]+(/tumit|telapak|plantar/.test(t)?' Untuk telapak kaki: peregangan pagi dan malam, gulingkan botol dingin di telapak, pakai alas kaki empuk. Kalau tidak membaik dalam seminggu, periksakan ke dokter.':' Kalau keluhan tidak membaik dalam beberapa hari, periksakan ke dokter.'),r[1]]}
+  if(/renang|berenang|kolam/.test(t))return ubahJadwal(0);
+  if(/futsal|bola/.test(t))return ubahJadwal(6);
+  if(/sepeda|gowes/.test(t))return ubahJadwal(8);
+  if(/leg|kaki|squat/.test(t))return ubahJadwal(3);
+  if(/push|pull|sit up|situp|kekuatan|upper|gym|angkat/.test(t))return ubahJadwal(1);
+  if(/interval|sprint|lari cepat/.test(t))return ubahJadwal(2);
+  if(/lari|jogging|joging/.test(t))return ubahJadwal(5);
+  if(/sebentar|sedikit|sibuk|buru|waktu|cepat/.test(t))return jadwalPendek();
+  if(/capek|lelah|lemas|ngantuk|malas/.test(t)){
+    if(/malas/.test(t))return ['Malas bukan alasan. Kerjakan versi pendek saja, tapi kerjakan. '+(await jadwalPendek())[0],1];
+    const r=await ubahJadwal(7);return ['Kalau benar-benar capek, istirahat aktif lebih baik daripada memaksa. '+r[0],r[1]]}
+  if(/libur|istirahat|tidak bisa|ga bisa|gak bisa|nggak bisa/.test(t))return ubahJadwal(7);
+  if(/kembali|batal|asli|semula/.test(t))return kembalikanJadwal();
+  return ['Coach belum paham maksudnya. Pilih salah satu tombol di bawah, atau tulis misalnya "hari ini mau renang", "capek", "waktu cuma sedikit", atau "ada futsal".',0];
+}
+let CHAT=[];
+function tanyaCoach(){
+  if(!CHAT.length){const f=st&&st.missions.find(m=>m.tipe!=='skd'&&m.tipe!=='pulih');
+    CHAT.push(['c',f?`Jadwal hari ini: ${f.judul} (±${f.menit} menit). Ada perubahan? Ceritakan, nanti coach atur ulang jadwalmu.`:'Ada yang mau diubah dari latihanmu?'])}
+  const chips=[['🏊 Mau renang','hari ini mau renang'],['⚽ Ada futsal','hari ini ada futsal'],['🚴 Sepeda saja','sepeda saja'],['🦵 Leg day','leg day'],['💪 Kekuatan','latihan kekuatan'],['🏃 Lari','lari'],
+    ['⏰ Waktu sedikit','waktu cuma sedikit'],['😮‍💨 Capek','capek'],['🤕 Ada nyeri','ada nyeri'],['↩️ Jadwal asli','kembalikan jadwal asli']];
+  modal(`<h2>💬 Tanya coach</h2><div class="chat" id="chat">${CHAT.map(([w,t])=>`<div class="bub ${w}">${esc(t)}</div>`).join('')}</div>
+  <div class="opts" style="margin-top:10px">${chips.map(c=>`<button type="button" class="opt" onclick="kirimCoach('${c[1]}','${c[0]}')">${c[0]}</button>`).join('')}</div>
+  <div style="display:flex;gap:8px;margin-top:10px"><input id="chatIn" placeholder="Tulis pesan, misal: hari ini mau renang" style="margin:0" onkeydown="if(event.key==='Enter')kirimCoach()"><button class="btn" onclick="kirimCoach()">Kirim</button></div>
+  <div class="row"><button class="btn ghost" onclick="tutupModal()">Tutup</button></div>`);
+  const c=$('chat');c.scrollTop=c.scrollHeight;
+}
+async function kirimCoach(teks,label){
+  const t=teks||$('chatIn').value.trim();if(!t)return;
+  CHAT.push(['u',label||t]);CHAT.push(['c','...']);tanyaCoach();
+  let r;try{r=await balasCoach(t)}catch(e){r=[e.message,0]}
+  CHAT[CHAT.length-1]=['c',r[0]];
+  if(r[1]){const f=st.missions.find(m=>m.tipe!=='skd'&&m.tipe!=='pulih');if(f)CHAT.push(['c',`Misi baru hari ini: ${f.teks}`])}
+  tanyaCoach();if(r[1])toast('Jadwal diperbarui ✓');
 }
 </script>
 </body>
