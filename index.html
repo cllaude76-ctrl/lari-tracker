@@ -824,6 +824,13 @@ function plan(day,o){
   else if(dow===7){tipe='istirahat';judul='Istirahat aktif';tf='Istirahat aktif: jalan santai 15 menit dan peregangan seluruh tubuh 10 menit.';
     sf=[T_('Jalan santai',900,'Pelan saja, sambil atur napas.'),T_('Peregangan seluruh tubuh',600,'Tahan tiap gerakan 30 detik, jangan sampai sakit.')]}
   else if(dow===8){tipe='lari';judul='Sepeda santai';const m=pendek?20:Math.min(45,25+2*w);tf=`Bersepeda santai ${m} menit, napas masih bisa ngobrol.`;sf=sepeda(m)}
+  else if(dow===9){tipe='kekuatan';judul='Latihan dalam rumah';const rd=pendek?2:Math.min(5,3+Math.floor(w/4));
+    tf=`Sirkuit dalam rumah ${rd} putaran (tiap gerakan 40 detik, jeda 20 detik): lari di tempat, jumping jack, squat, mountain climber, burpee. Tutup dengan push up ${sn} x ${rp('pushup')} dan sit up ${sn} x ${rp('situp')}.`;
+    const g=[['Lari di tempat, lutut tinggi','Angkat lutut setinggi pinggang, ayunkan tangan.'],['Jumping jack','Mendarat dengan ujung kaki, lutut sedikit ditekuk.'],['Squat','Pinggul turun seperti duduk, lutut searah jari kaki.'],['Mountain climber','Badan lurus, tarik lutut ke dada bergantian dengan cepat.'],['Burpee','Jongkok, lompat ke posisi push up, kembali, lalu lompat ke atas.']];
+    sf=[T_('Pemanasan: lari di tempat pelan dan putar sendi',300,'Ruangan sempit tidak masalah, cukup 2 x 2 meter.')];
+    for(let r=1;r<=rd;r++){g.forEach(([n,t],i)=>{sf.push(T_(n+' (putaran '+r+' dari '+rd+')',40,t));sf.push({k:'rest',t:'Jeda',sec:20,tip:'Atur napas.'})});if(r<rd)sf.push(Z_(60))}
+    sf=sf.concat(sets_('Push up',sn,rp('pushup'),60,'Badan lurus, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Sit up',sn,rp('situp'),60,'Jangan menarik leher.'),[pend]);
+  }
   else if(dow===1){tipe='kekuatan';judul='Upper body A';
     tf=`Push up ${sn} x ${rp('pushup')}, ${pullTeks(sn)}, sit up ${sn} x ${rp('situp')}, plank 3 x ${Math.min(60,30+5*w)} detik.`;
     sf=[pem].concat(sets_('Push up',sn,rp('pushup'),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(90)],pullBlok(sn),[Z_(90)],
@@ -1934,7 +1941,7 @@ function renderSkd(){
   $('qList').innerHTML=my.length?'<h3 class="lbl">Soal saya ('+D.soal.length+')</h3>'+my.map(s=>`<div class="stk"><span><small class="msg">${esc(s.subtes)} ${esc(s.topik||'')}</small><br>${esc(String(s.pertanyaan).slice(0,90))}${s.pertanyaan.length>90?'...':''}</span><button class="btn ghost sm" onclick="hapusSoal(${Number(s.id)})">Hapus</button></div>`).join(''):'';
 }
 /* ---------- Tanya coach: ubah jadwal langsung di aplikasi ---------- */
-const AKT={0:'Renang recovery',1:'Upper body A',2:'Lari interval',3:'Leg day + shuttle',4:'Upper body B + sepeda',5:'Lari santai',6:'Futsal',7:'Istirahat aktif',8:'Sepeda santai'};
+const AKT={0:'Renang recovery',1:'Upper body A',2:'Lari interval',3:'Leg day + shuttle',4:'Upper body B + sepeda',5:'Lari santai',6:'Futsal',7:'Istirahat aktif',8:'Sepeda santai',9:'Latihan dalam rumah'};
 function jadwalObj(){const j=(P.target&&P.target.jadwal)||{};return {tukar:{...(j.tukar||{})},pasang:{...(j.pasang||{})},pendek:{...(j.pendek||{})}}}
 function templateOf(tg){const j=jadwalObj();return tg in j.tukar?Number(j.tukar[tg]):new Date(tg+'T12:00:00').getDay()}
 async function simpanJadwal(J){
@@ -1979,25 +1986,127 @@ async function kembalikanJadwal(){
   delete J.tukar[t0];delete J.pendek[t0];if(p){delete J.tukar[p];delete J.pasang[p]}delete J.pasang[t0];
   await simpanJadwal(J);return ['Jadwal hari ini dikembalikan seperti semula.',1];
 }
-const NYERI_KATA=/nyeri|sakit|cedera|keseleo|pusing|demam|flu|batuk|sesak|tumit|plantar/;
+/* ---------- Otak coach: memahami bahasa sehari-hari ---------- */
+const LUAR=new Set([0,2,5,6,8]);           // jadwal yang dilakukan di luar rumah
+function rapikan(t){
+  t=' '+(t||'').toLowerCase().replace(/[^a-z0-9\s]/g,' ').replace(/(.)\1{2,}/g,'$1')+' ';
+  const ganti=[[/ (gk|ga|gak|nggak|ngga|enggak|engga|g|tdk|ndak|kagak|gaada) /g,' tidak '],[/ (bgt|banget|bngt) /g,' banget '],[/ (yg) /g,' yang '],[/ (dgn|dg) /g,' dengan '],
+    [/ (krn|karna|soalnya) /g,' karena '],[/ (aja|doang) /g,' saja '],[/ (udah|udh|sdh|dah) /g,' sudah '],[/ (gimana|gmn|bgmn|gmna|piye|kumaha) /g,' bagaimana '],
+    [/ (hr|hri) /g,' hari '],[/ (bsk|besuk) /g,' besok '],[/ (lg|lagi) /g,' lagi '],[/ (sy|aku|gw|gue|gua) /g,' saya '],[/ (bs|bsa) /g,' bisa '],[/ (cpk|capek|cape|capai) /g,' capek '],
+    [/ (mls|males|malas) /g,' malas '],[/ (blm|belom) /g,' belum '],[/ (tp|tpi) /g,' tapi '],[/ (kalo|klo|kl) /g,' kalau '],[/ (makasih|mksh|thanks|thx|tengkyu|suwun|nuhun) /g,' terima kasih ']];
+  ganti.forEach(([a,b])=>{t=t.replace(a,b).replace(a,b)});
+  return t.replace(/\s+/g,' ');
+}
+const ada=(t,re)=>re.test(t);
+const BAGIAN=/ (kaki|lutut|tumit|telapak|betis|paha|punggung|pinggang|bahu|leher|tangan|siku|pergelangan|otot|engkel|pinggul|jari) /;
+const hariIni=()=>st&&st.missions.find(m=>m.tipe!=='skd'&&m.tipe!=='pulih');
+function ringkasProgres(){
+  const T=TG(),b=[['pushup','Push up','kali'],['situp','Sit up','kali'],['pullup','Pull up','kali'],['lari12','Lari 12 menit','m']];
+  const baris=b.map(([j,n,u])=>{const v=best(j)||Number(AW()[j])||null;return v?`${n}: ${Math.round(v)} dari target ${T[j]} ${u}${v>=T[j]?' ✅':''}`:`${n}: belum ada data`});
+  const s=latest('skd');baris.push(s?`SKD terakhir: ${Math.round(s)} dari target ${T.skd}`:'SKD: belum ada tryout');
+  return baris.join('\n');
+}
+// pengetahuan umum coach: tidak mengubah jadwal
+const TAHU=[
+ [/ (makan|makanan|gizi|nutrisi|diet|sarapan|protein|karbo|nasi|lapar|menu|mie|gorengan|jajan) /,()=>'Pola makan untuk latihan:\n• Makan 3 kali sehari, jangan lewat sarapan.\n• Isi piring: separuh sayur dan buah, seperempat nasi atau umbi, seperempat lauk protein (telur, tempe, tahu, ayam, ikan).\n• Makan besar 2 sampai 3 jam sebelum latihan, atau camilan ringan (pisang, roti) 1 jam sebelumnya.\n• Setelah latihan, makan yang ada proteinnya dalam 1 sampai 2 jam.\n• Kurangi gorengan, mi instan, dan minuman manis. Sesekali boleh, jangan tiap hari.'],
+ [/ (berat badan|kurus|gemuk|bb|turun berat|naik berat|bmi|perut buncit) /,()=>'Soal berat badan:\n• Mau turun: kurangi porsi nasi sedikit dan minuman manis, perbanyak sayur dan protein, latihan tetap jalan. Turun pelan 0,5 kg per minggu sudah bagus.\n• Mau naik: tambah satu kali makan atau camilan bergizi (telur, susu, kacang, pisang) dan rutin latihan kekuatan.\n• Timbang seminggu sekali di jam yang sama, jangan tiap hari.\nKalau ada keluhan kesehatan, tanyakan ke dokter atau ahli gizi.'],
+ [/ (minum|air putih|haus|dehidrasi|isotonik|kopi|teh) /,()=>'Minum:\n• Minimal 8 gelas (sekitar 2 liter) sehari, lebih banyak kalau berkeringat.\n• Minum 1 sampai 2 gelas 1 jam sebelum latihan, seteguk tiap 15 menit saat latihan.\n• Air kencing kuning pekat tanda kurang minum.\n• Kopi boleh secukupnya, jangan menggantikan air putih.'],
+ [/ (tidur|insomnia|susah tidur|jam tidur|bangun pagi) /,()=>'Tidur adalah bagian dari latihan. Otot pulih saat tidur.\n• Targetkan 7 sampai 9 jam.\n• Matikan HP 30 menit sebelum tidur.\n• Tidur dan bangun di jam yang sama, termasuk hari libur.\n• Hindari kopi setelah jam 3 sore.'],
+ [/ (pemanasan|warming|warm up|pendinginan|cooling|stretching|peregangan) /,()=>'Pemanasan 5 menit wajib: jalan cepat atau lari pelan, putar leher, bahu, pinggang, lutut, pergelangan, lalu ayun kaki ke depan dan samping.\nPendinginan 5 menit: jalan pelan, lalu tahan peregangan betis, paha, dan bahu masing-masing 30 detik. Peregangan tahan lama dilakukan setelah latihan, bukan sebelum.'],
+ [/ (cara lari|teknik lari|napas|nafas|ngos|engap|tersengal|pace|lari cepat|lari jauh|stamina) /,()=>'Teknik lari:\n• Badan tegak sedikit condong ke depan, pandangan lurus.\n• Langkah pendek dan cepat, mendarat di bawah badan, bukan jauh di depan.\n• Tangan ditekuk 90 derajat, ayun lurus depan belakang.\n• Napas: tarik 2 sampai 3 langkah, buang 2 sampai 3 langkah lewat hidung dan mulut.\n• Stamina naik dari lari santai yang rutin. Sebagian besar lari harus pelan, napas masih bisa ngobrol.'],
+ [/ (pull up|pullup|palang|digantung|bergantung) /,()=>'Cara menambah pull up:\n• Kalau belum bisa 5: latihan negatif (lompat ke atas, turun pelan 5 detik) dan dead hang 20 sampai 30 detik.\n• Tidak ada palang: pakai kusen pintu yang kuat, dahan pohon, palang di taman, atau latih punggung dengan inverted row di bawah meja yang kokoh.\n• Latih 2 sampai 3 kali seminggu, jangan tiap hari.'],
+ [/ (push up|pushup) /,()=>'Teknik push up:\n• Badan lurus dari kepala sampai tumit, perut dikencangkan.\n• Tangan sedikit lebih lebar dari bahu, siku membentuk sudut 45 derajat dari badan.\n• Dada turun sampai sekepal dari lantai, lalu dorong.\n• Kalau belum kuat, mulai dengan lutut di lantai atau tangan di meja.'],
+ [/ (sit up|situp|perut|abs) /,()=>'Teknik sit up:\n• Kaki ditekuk, telapak menempel lantai (boleh ditahan teman).\n• Tangan menyilang di dada atau di samping kepala tanpa menarik leher.\n• Naik sampai siku menyentuh lutut, turun terkontrol.\n• Tambah plank untuk menguatkan perut.'],
+ [/ (shuttle|lari bolak|kelincahan) /,()=>'Shuttle run: jangan berhenti total di ujung. Turunkan pinggul, tapak kaki terakhir menyamping, sentuh garis, lalu dorong balik. Latih start cepat 5 sampai 10 meter.'],
+ [/ (sepatu|kaos kaki|pakaian|baju lari) /,()=>'Pakai sepatu lari yang empuk dan pas (ada ruang sejempol di ujung). Ganti kalau sol sudah tipis atau sudah dipakai sekitar 600 sampai 800 km. Kaos kaki tidak licin supaya tidak lecet.'],
+ [/ (skd|twk|tiu|tkp|belajar|soal|tryout|try out|ujian tulis) /,()=>'Urusan SKD dipegang Guru SKD. Buka menu SKD:\n• Kerjakan "Tugas dari guru hari ini" (sekitar 20 soal).\n• Lihat bagian Kelemahanmu, latih materi yang paling rendah.\n• Hari Minggu ada tryout.\nTips: belajar di jam yang sama tiap hari, utamakan materi lemah, dan baca pembahasan soal yang salah.'],
+ [/ (progres|perkembangan|target|sudah sampai|naik berapa|kapan lolos|hasil saya|nilai saya) /,()=>'Perkembanganmu sekarang:\n'+ringkasProgres()+'\nLihat grafik lengkapnya di menu Progres.'],
+ [/ (jadwal besok|besok latihan|besok apa) /,()=>{const p=prog(),d=plan(p.day+1)[0];return `Besok jadwalnya ${d.judul} (±${d.menit} menit): ${d.teks}`}],
+ [/ (jadwal|latihan hari ini|hari ini apa|misi hari ini|ngapain) /,()=>{const f=hariIni();return f?`Hari ini ${f.judul} (±${f.menit} menit): ${f.teks}`:'Program belum dimulai. Mulai dulu di menu Hari ini.'}],
+ [/ (puasa|ramadan|ramadhan|sahur|buka puasa) /,()=>'Saat puasa:\n• Latihan ringan sampai sedang 30 sampai 60 menit sebelum buka puasa, atau 1 jam setelah buka.\n• Latihan berat (interval, tes) pindahkan ke malam setelah makan.\n• Sahur dengan protein dan karbohidrat yang lama dicerna (nasi, telur, oat), minum cukup antara buka dan sahur.\nBilang "waktu sedikit" kalau mau versi pendek.'],
+ [/ (panas|terik|gerah|siang hari) /,()=>'Kalau cuaca panas: latihan pagi sebelum jam 8 atau sore setelah jam 4. Pakai topi, minum sebelum dan sesudah latihan, dan kurangi kecepatan. Berhenti kalau pusing, mual, atau kulit terasa panas dan kering.'],
+ [/ (kram) /,()=>'Kram: hentikan gerakan, regangkan otot yang kram pelan-pelan (misal betis: tarik jari kaki ke arah tulang kering), pijat ringan, lalu minum. Cegah dengan pemanasan, cukup minum, dan makan buah seperti pisang.'],
+ [/ (pegal|linu|kaku|nyeri otot|doms) /,()=>'Pegal 1 sampai 2 hari setelah latihan itu normal, tanda otot sedang beradaptasi. Tetap bergerak ringan (jalan, renang santai, peregangan), cukup tidur, dan minum. Kalau nyerinya tajam, bengkak, atau di sendi, itu bukan pegal biasa: bilang "ada nyeri" supaya jadwal diatur ulang.'],
+ [/ (motivasi|semangat|putus asa|menyerah|gagal|minder|takut|cemas|stres|stress|galau) /,()=>'Wajar kalau semangat naik turun. Yang membuatmu lolos bukan semangat, tapi kebiasaan.\n• Fokus pada misi hari ini saja, bukan seluruh perjalanan.\n• Lihat menu Progres: kamu sudah lebih baik dari saat mulai.\n• Kalau berat, kerjakan versi pendek. Sedikit tetap lebih baik dari nol.\nKalau rasa cemas atau sedih berlangsung lama dan mengganggu, bicarakan dengan orang yang kamu percaya atau tenaga profesional.'],
+];
 async function balasCoach(teks){
-  const t=(teks||'').toLowerCase();
-  if(/dada|sesak|pingsan|pusing berat/.test(t))return ['Hentikan latihan hari ini. Nyeri dada, sesak, atau pusing berat harus diperiksakan ke dokter atau fasilitas kesehatan secepatnya. Jangan latihan dulu sebelum diperiksa.',0,'stop'];
-  if(NYERI_KATA.test(t)){const r=await ubahJadwal(7);return ['Tubuhmu lebih penting dari jadwal. '+r[0]+(/tumit|telapak|plantar/.test(t)?' Untuk telapak kaki: peregangan pagi dan malam, gulingkan botol dingin di telapak, pakai alas kaki empuk. Kalau tidak membaik dalam seminggu, periksakan ke dokter.':' Kalau keluhan tidak membaik dalam beberapa hari, periksakan ke dokter.'),r[1]]}
-  if(/renang|berenang|kolam/.test(t))return ubahJadwal(0);
-  if(/futsal|bola/.test(t))return ubahJadwal(6);
-  if(/sepeda|gowes/.test(t))return ubahJadwal(8);
-  if(/leg|kaki|squat/.test(t))return ubahJadwal(3);
-  if(/push|pull|sit up|situp|kekuatan|upper|gym|angkat/.test(t))return ubahJadwal(1);
-  if(/interval|sprint|lari cepat/.test(t))return ubahJadwal(2);
-  if(/lari|jogging|joging/.test(t))return ubahJadwal(5);
-  if(/sebentar|sedikit|sibuk|buru|waktu|cepat/.test(t))return jadwalPendek();
-  if(/capek|lelah|lemas|ngantuk|malas/.test(t)){
-    if(/malas/.test(t))return ['Malas bukan alasan. Kerjakan versi pendek saja, tapi kerjakan. '+(await jadwalPendek())[0],1];
-    const r=await ubahJadwal(7);return ['Kalau benar-benar capek, istirahat aktif lebih baik daripada memaksa. '+r[0],r[1]]}
-  if(/libur|istirahat|tidak bisa|ga bisa|gak bisa|nggak bisa/.test(t))return ubahJadwal(7);
-  if(/kembali|batal|asli|semula/.test(t))return kembalikanJadwal();
-  return ['Coach belum paham maksudnya. Pilih salah satu tombol di bawah, atau tulis misalnya "hari ini mau renang", "capek", "waktu cuma sedikit", atau "ada futsal".',0];
+  const t=rapikan(teks),f=hariIni(),cur=f?templateOf(today()):null;
+  // 1. tanda bahaya
+  if(ada(t,/ (sesak napas|sesak nafas|napas sesak|nafas sesak|pingsan|pusing berat|pusing banget|berkunang|jantung berdebar|berdebar|nyeri dada) /)||(ada(t,/ dada /)&&ada(t,/ (sesak|sakit|nyeri|berat|tertekan|perih) /)))
+    return ['Hentikan latihan hari ini. Nyeri dada, sesak napas, berdebar kencang, atau pusing berat harus diperiksakan ke dokter atau fasilitas kesehatan secepatnya. Jangan latihan sebelum diperiksa.',0];
+  // 2. cuaca dan tempat
+  if(ada(t,/ (hujan|gerimis|becek|banjir|badai|petir|angin kencang|mendung) /)){
+    if(cur==null)return ['Hujan bukan alasan berhenti. Program belum dimulai, mulai dulu di menu Hari ini.',0];
+    if(!LUAR.has(cur))return [`Aman, jadwal hari ini (${f.judul}) bisa dikerjakan di dalam rumah. Lanjutkan seperti biasa.`,0];
+    const r=await ubahJadwal(9);return ['Hujan bukan alasan libur. Latihan pindah ke dalam rumah: sirkuit tanpa alat, cukup ruang 2 x 2 meter. '+r[0]+(cur===0?' Jangan berenang saat ada petir.':''),r[1]];
+  }
+  if(ada(t,/ kolam\w* (tutup|jauh|penuh|libur|tidak|rame|ramai|mahal) /)||ada(t,/ (tidak ada kolam|tidak bisa renang|tidak bisa berenang) /))
+  {if(cur===0){const r=await ubahJadwal(8);return ['Tidak apa-apa. Renang diganti sepeda santai, manfaat pemulihannya mirip. '+r[0],r[1]]}
+    return ['Renang hanya untuk pemulihan. Kalau tidak ada kolam, ganti jalan santai 30 menit atau sepeda santai.',0]}
+  if(ada(t,/ (tidak ada lapangan|lapangan jauh|tidak ada tempat|di kos|di kost|di rumah saja|tidak bisa keluar|tidak boleh keluar) /)){
+    if(cur!=null&&LUAR.has(cur)){const r=await ubahJadwal(9);return ['Bisa latihan di dalam rumah. '+r[0],r[1]]}
+    return ['Jadwal hari ini bisa dikerjakan di rumah. Lanjutkan.',0];
+  }
+  // 3. sakit dan keluhan
+  if(ada(t,/ (demam|meriang|panas dingin|batuk|flu|pilek|radang|tenggorokan|sakit|diare|mencret|muntah|mual|tidak enak badan|kurang enak badan|masuk angin|pusing|sakit kepala|kepala sakit) /)&&!ada(t,BAGIAN)){
+    const berat=ada(t,/ (demam|meriang|panas dingin|batuk|diare|mencret|muntah|mual) /);
+    const r=berat?await ubahJadwal(7):await jadwalPendek();
+    return [(berat?'Kalau demam, batuk, mual, atau diare, tubuh perlu istirahat total. Jangan latihan dulu, cukup jalan pelan di rumah kalau kuat. ':'Kalau keluhannya ringan di atas leher (pilek, hidung tersumbat), cukup bergerak ringan. ')+r[0]+' Banyak minum, tidur cukup, makan teratur. Kalau tidak membaik dalam 2 sampai 3 hari atau makin berat, periksa ke dokter.',r[1]];
+  }
+  if(ada(t,/ (nyeri|cedera|keseleo|terkilir|bengkak|memar|lecet|plantar|encok|sakit|ngilu) /)&&(ada(t,BAGIAN)||ada(t,/ (nyeri|cedera|keseleo|terkilir|bengkak|memar|lecet|plantar|encok|ngilu) /))){
+    const sar=ada(t,/ (tumit|telapak|plantar) /)?' Untuk telapak kaki: peregangan pagi dan malam, gulingkan botol dingin di telapak, pakai alas kaki empuk.'
+      :ada(t,/ (lutut) /)?' Untuk lutut: kompres dingin 15 menit, hindari tangga dan jongkok dalam dulu.'
+      :ada(t,/ (keseleo|terkilir|bengkak) /)?' Untuk keseleo atau bengkak: istirahatkan, kompres dingin 15 menit tiap 2 sampai 3 jam, ganjal kaki lebih tinggi.'
+      :ada(t,/ (punggung|pinggang|encok) /)?' Untuk punggung: hindari mengangkat beban, peregangan lembut, kompres hangat setelah 2 hari.'
+      :ada(t,/ (lecet) /)?' Untuk lecet: bersihkan, tutup plester, pakai kaos kaki yang pas.':'';
+    const r=await ubahJadwal(7);
+    return ['Tubuhmu lebih penting dari jadwal. '+r[0]+sar+' Kalau tidak membaik dalam seminggu, nyeri makin parah, atau tidak bisa menapak, periksa ke dokter.',r[1]];
+  }
+  if(ada(t,/ (haid|menstruasi|datang bulan|mens) /)){
+    const r=await jadwalPendek();return ['Saat haid, latihan ringan justru bisa mengurangi kram perut. Dengarkan tubuhmu: kalau nyeri hebat, istirahat saja. '+r[0],r[1]];
+  }
+  // 4. kondisi badan dan waktu
+  if(ada(t,/ (begadang|kurang tidur|tidak tidur|ngantuk|tidur larut) /)){
+    const r=await jadwalPendek();return ['Kurang tidur membuat risiko cedera naik. Hari ini versi pendek dulu, jangan memaksakan kecepatan. '+r[0]+' Malam ini tidur lebih awal.',r[1]];
+  }
+  if(ada(t,/ (malas|tidak semangat|tidak mood|bosan|mager) /)){
+    const r=await jadwalPendek();return ['Malas itu wajar, tapi tidak boleh menang. Mulai saja 5 menit pertama, biasanya rasa malas hilang setelah pemanasan. '+r[0],r[1]];
+  }
+  if(ada(t,/ (capek|lelah|lemas|lemes|loyo|tenaga habis|kelelahan) /)){
+    const r=await ubahJadwal(7);return ['Kalau benar-benar capek, istirahat aktif lebih baik daripada memaksa. '+r[0]+' Besok kembali normal.',r[1]];
+  }
+  if(ada(t,/ (sibuk|lembur|kerja|kuliah|sekolah|acara|kondangan|rapat|tugas|deadline|sebentar|sedikit waktu|waktu sedikit|waktunya sedikit|buru buru|terburu|cuma punya|hanya punya) /)){
+    if(ada(t,/ (tidak bisa latihan|tidak sempat sama sekali|full|seharian) /))return ubahJadwal(7);
+    return jadwalPendek();
+  }
+  if(ada(t,/ (pergi|mudik|keluar kota|perjalanan|liburan|traveling|di jalan) /)){
+    const r=await ubahJadwal(9);return ['Di perjalanan tetap bisa latihan di kamar atau penginapan tanpa alat. '+r[0],r[1]];
+  }
+  if(ada(t,/ (libur|istirahat|tidak bisa latihan|tidak bisa|izin|skip|bolos) /))return ubahJadwal(7);
+  // 5. pertanyaan pengetahuan didahulukan supaya tidak salah mengubah jadwal
+  const tanya=/\?/.test(teks||'')||ada(t,/ (apa|bagaimana|cara|kenapa|mengapa|berapa|tips|apakah|boleh|sebaiknya|harus) /);
+  if(tanya)for(const [re,fn] of TAHU)if(ada(t,re))return [fn(),0];
+  // 6. ganti jenis latihan
+  if(ada(t,/ (kembali|batal|asli|semula|reset|seperti biasa) /))return kembalikanJadwal();
+  if(ada(t,/ (dalam rumah|di rumah|indoor|tanpa alat) /))return ubahJadwal(9);
+  if(ada(t,/ (renang|berenang) /))return ubahJadwal(0);
+  if(ada(t,/ (futsal|bola|sepak bola|basket|voli|badminton|bulu tangkis) /)){
+    if(ada(t,/ (basket|voli|badminton|bulu tangkis) /)){const r=await ubahJadwal(6);return [r[0].replace(/Futsal/g,'Olahraga permainan')+' Catat lewat tombol ⚽ setelah main.',r[1]]}
+    return ubahJadwal(6);
+  }
+  if(ada(t,/ (sepeda|gowes|bersepeda) /))return ubahJadwal(8);
+  if(ada(t,/ (leg day|latihan kaki|squat|lunge) /))return ubahJadwal(3);
+  if(ada(t,/ (kekuatan|upper|gym|angkat beban|fitness) /))return ubahJadwal(1);
+  if(ada(t,/ (interval|sprint) /))return ubahJadwal(2);
+  if(ada(t,/ (lari|jogging|joging|jalan kaki) /)&&!ada(t,/ (cara|teknik|napas|nafas|stamina|cepat|jauh) /))return ubahJadwal(5);
+  // 6. pengetahuan
+  for(const [re,fn] of TAHU)if(ada(t,re))return [fn(),0];
+  // 7. obrolan
+  if(ada(t,/ (terima kasih) /))return ['Sama-sama. Tetap konsisten, ya!',0];
+  if(ada(t,/ (halo|hai|hi|hallo|pagi|siang|sore|malam|assalamualaikum|permisi|coach) /)&&t.trim().split(' ').length<=4)
+    return [`Halo! ${f?`Jadwal hari ini ${f.judul} (±${f.menit} menit).`:''} Ceritakan kondisimu hari ini, nanti coach sesuaikan.`,0];
+  // 8. tidak dikenali: tetap beri arahan berguna
+  return [`Coach belum yakin maksudnya. Coach paling paham soal latihan, kondisi badan, cuaca, waktu, makan, dan tidur.\n\nContoh yang bisa kamu tulis:\n• "hari ini hujan" atau "tidak ada lapangan"\n• "kaki saya sakit" atau "lagi flu"\n• "cuma punya 20 menit" atau "lagi sibuk kerja"\n• "makan apa sebelum lari?"\n• "cara nambah pull up"\n• "progres saya bagaimana?"\n\nUntuk pertanyaan panjang di luar latihan, pakai Konsultasi mendalam di menu Profil.`,0];
 }
 let CHAT=[];
 function tanyaCoach(){
