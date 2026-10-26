@@ -1,11 +1,11 @@
 {
-  "name": "Lari Tracker",
-  "short_name": "Lari",
-  "description": "Pelatih persiapan tes kedinasan: lari, push up, sit up, pull up, renang, sepeda, SKD.",
+  "name": "RunUp",
+  "short_name": "RunUp",
+  "description": "Coach latihan fisik, guru SKD, dan jadwal harian untuk persiapan tes CPNS dan sekolah kedinasan.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#EEF5FF",
+  "background_color": "#C8E2FB",
   "theme_color": "#0A2457",
   "lang": "id",
   "icons": [
