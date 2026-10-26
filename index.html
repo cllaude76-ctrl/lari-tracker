@@ -49,6 +49,11 @@ button.pill:hover{background:#fff;color:var(--blue)}
 @keyframes tin{from{opacity:0;transform:translateY(8px)}}
 .card{background:var(--white);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 10px 30px -18px rgba(10,36,87,.35)}
 .card h2{margin:0 0 4px;font-size:17px}.sub{color:var(--mut);font-size:13px;margin:0 0 12px;line-height:1.5}
+.jd{display:block;border:1.5px solid var(--line);border-radius:14px;margin-top:8px;background:#fff}
+.jd>summary,.jd.off{display:flex;align-items:center;gap:10px;padding:11px 12px;color:var(--navy);font-weight:500}
+.jd b{width:66px;flex:none;font:700 14px Sora,system-ui,sans-serif}.jd b small,.jd span small{display:block;font:500 11px 'Plus Jakarta Sans',system-ui,sans-serif;color:var(--mut)}
+.jd span{flex:1;font-size:14px}.jd em{font-style:normal}.jd.now{border-color:var(--blue);background:var(--ice)}.jd.off{opacity:.5}
+.jd[open]{padding-bottom:10px}.jd .sub,.jdl{padding:0 14px}.jdl{margin:4px 0 0 14px;font-size:13px;line-height:1.7;color:var(--navy)}
 .guru{background:linear-gradient(135deg,#fff 60%,#EAF3FF);border:1.5px solid #BFD6FB}
 .btn.big{padding:15px 22px;font-size:16px;width:100%}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
@@ -168,7 +173,9 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
   <section class="tab" id="tab-hari">
     <section class="card"><div class="hd"><h2 id="pgT">Program menuju SKD</h2><span class="msg" id="pgS"></span></div>
       <div class="bar" style="margin-top:8px"><i id="pgB"></i></div><div id="mis"></div>
-      <div class="row"><button class="btn ghost" onclick="formBola()">⚽ Saya main bola atau futsal</button></div></section>
+      <div class="row"><button class="btn ghost" onclick="formBola()">⚽ Saya main bola atau futsal</button><button class="btn ghost" onclick="goTab('kal')">📅 Lihat jadwal minggu ini</button></div></section>
+
+    <section class="card guru"><h2>👨‍🏫 Guru SKD</h2><p class="sub">Tugas belajar hari ini, terpisah dari latihan fisik.</p><div id="guruHari"></div></section>
 
     <section class="card"><div class="hd"><h2>Cek pagi</h2><span class="msg" id="cpS"></span></div>
       <p class="sub">Isi saat bangun tidur, sebelum beraktivitas. Nadi pagi yang naik adalah tanda tubuh lelah.</p><div id="cp"></div></section>
@@ -193,6 +200,9 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
 
   <!-- KALENDER -->
   <section class="tab" id="tab-kal">
+    <section class="card"><div class="hd"><button class="btn ghost sm" onclick="jdwNav(-1)" aria-label="Minggu sebelumnya">‹</button><h2 id="jdT">Minggu ini</h2><button class="btn ghost sm" onclick="jdwNav(1)" aria-label="Minggu berikutnya">›</button></div>
+      <p class="sub" id="jdS" style="text-align:center;margin-top:6px"></p><div id="jdw"></div>
+      <p class="msg" style="margin-top:10px">Ketuk hari untuk melihat rincian latihan. Jadwal menyesuaikan kemampuan dan hasil tes 2 mingguanmu.</p></section>
     <section class="card"><h2>Konsistensi</h2><p class="sub">Dihitung dari hari pertama program sampai kemarin.</p><div class="kpis" id="kst"></div></section>
     <section class="card">
       <div class="hd"><button class="btn ghost sm" onclick="calNav(-1)" aria-label="Bulan sebelumnya">‹</button><h2 id="calT"></h2><button class="btn ghost sm" onclick="calNav(1)" aria-label="Bulan berikutnya">›</button></div>
@@ -315,7 +325,7 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
 
 <nav class="bn">
   <button data-t="hari" onclick="goTab('hari')"><span>🏠</span>Hari ini</button>
-  <button data-t="kal" onclick="goTab('kal')"><span>📅</span>Kalender</button>
+  <button data-t="kal" onclick="goTab('kal')"><span>📅</span>Jadwal</button>
   <button data-t="prog" onclick="goTab('prog')"><span>📈</span>Progres</button>
   <button data-t="skd" onclick="goTab('skd')"><span>📚</span>SKD</button>
   <button data-t="pro" onclick="goTab('pro')"><span>👤</span>Profil</button>
@@ -434,66 +444,81 @@ function lemahSKD(day){
   if(!ks.length||day%3===0)return rot;
   return ks.sort((a,b)=>r[a]-r[b])[0].toUpperCase();
 }
+const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+function sesiMenit(sf){return Math.round((sf||[]).reduce((a,s)=>a+(s.k==='reps'?40:s.k==='input'?20:s.sec||0),0)/60)}
 function plan(day,o){
-  o=o||{};const pi=prog(),F=o.fct||1,ph=fase(day,pi.total),w=Math.ceil(day/7),k=(day-1)%7,taper=ph==='Pengurangan',left=pi.total-day;
-  const pm={Dasar:.55,Bangun:.65,Puncak:.75,Pengurangan:.4}[ph],sn={Dasar:3,Bangun:4,Puncak:4,Pengurangan:2}[ph];
-  const bf=o.bola&&(k===1||k===4)?.7:1;
+  o=o||{};const pi=prog(),F=o.fct||1,ph=fase(day,pi.total),w=Math.ceil(day/7),taper=ph==='Pengurangan',left=pi.total-day;
+  const tg=addDays(P.mulai||today(),day-1),dow=new Date(tg+'T12:00:00').getDay();
+  const pi_=['Dasar','Bangun','Puncak','Pengurangan'].indexOf(ph);
+  const pm=[.55,.65,.75,.4][pi_],sn=[3,4,4,2][pi_];
+  const bf=o.bola&&[1,3,4].includes(dow)?.7:1;
   const rp=j=>Math.max(1,Math.round(maxNow(j)*pm*F*bf));
-  const half=n=>Math.max(1.5,Math.round(n*F*2)/2);
-  const pem=T_('Pemanasan: jalan di tempat, putar sendi, peregangan dinamis',300,'Jangan lewati pemanasan. Cedera menghambat targetmu.');
-  const pend=T_('Pendinginan: jalan pelan dan peregangan',180,'');
-  let tipe,tf,sf;
-  if(left<=0){
-    tipe='istirahat';tf='Hari tes. Datang lebih awal, makan secukupnya, dan percaya pada latihanmu.';sf=[T_('Peregangan ringan dan napas tenang',300,'Hari ini bukan untuk latihan berat.')];
-  }else if(left===1){
-    tipe='istirahat';tf='Istirahat total sebelum tes. Jalan santai 15 menit, siapkan berkas, tidur cepat.';sf=[T_('Jalan santai',900,'Ringan saja. Simpan tenagamu untuk besok.')];
-  }else if(k===6&&!taper){
-    tipe='tes';tf='Tes samapta mingguan: lari 12 menit, push up, sit up, dan pull up 1 menit, lalu shuttle run.';
+  const kaki=o.kaki;                                   // telapak kaki sedang nyeri: lari diganti sepeda
+  const pem=T_('Pemanasan: jalan cepat, putar sendi, peregangan dinamis',300,'Jangan lewati pemanasan. Cedera menghambat targetmu.');
+  const pend=T_('Pendinginan: jalan pelan, peregangan betis dan telapak kaki',240,'Tarik jari kaki ke arah tulang kering, tahan 30 detik tiap kaki.');
+  const sepeda=(m,why)=>[pem,T_('Bersepeda santai '+m+' menit',m*60,why||'Napas masih bisa ngobrol.'),I_('sepeda','Berapa km yang kamu tempuh?'),pend];
+  const pullBlok=n=>{const pu=maxNow('pullup');
+    return pu<5?[].concat(sets_('Pull up negatif (lompat ke atas, turun pelan 5 detik)',n,Math.max(3,Math.round(3*F)),90,'Turun sepelan mungkin. Ini cara tercepat menambah pull up.'),[Z_(60)],
+      [T_('Dead hang: menggantung di palang',Math.min(45,20+5*w),'Bahu aktif, jangan hanya bergantung di sendi.')])
+      :sets_('Pull up',n,rp('pullup'),90,'Dagu melewati palang, tanpa ayunan kaki.')};
+  const pullTeks=n=>maxNow('pullup')<5?`pull up negatif ${n} x ${Math.max(3,Math.round(3*F))} dan dead hang ${Math.min(45,20+5*w)} detik`:`pull up ${n} x ${rp('pullup')}`;
+  let tipe,judul,tf,sf;
+  if(left<=0){tipe='istirahat';judul='Hari tes';tf='Hari tes. Datang lebih awal, makan secukupnya, percaya pada latihanmu.';sf=[T_('Peregangan ringan dan napas tenang',300,'Hari ini bukan untuk latihan berat.')]}
+  else if(left===1){tipe='istirahat';judul='Istirahat';tf='Istirahat total sebelum tes. Jalan santai 15 menit, siapkan berkas, tidur cepat.';sf=[T_('Jalan santai',900,'Simpan tenagamu untuk besok.')]}
+  else if(dow===1){tipe='kekuatan';judul='Upper body A';
+    tf=`Push up ${sn} x ${rp('pushup')}, ${pullTeks(sn)}, sit up ${sn} x ${rp('situp')}, plank 3 x ${Math.min(60,30+5*w)} detik.`;
+    sf=[pem].concat(sets_('Push up',sn,rp('pushup'),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(90)],pullBlok(sn),[Z_(90)],
+      sets_('Sit up',sn,rp('situp'),60,'Siku ke lutut bergantian. Jangan menarik leher dengan tangan.'),[Z_(60)],
+      [T_('Plank 1',Math.min(60,30+5*w),'Perut dan bokong dikencangkan.'),Z_(45),T_('Plank 2',Math.min(60,30+5*w),''),Z_(45),T_('Plank 3',Math.min(60,30+5*w),'')],[pend]);
+  }else if(dow===2&&w%2===0&&!taper){tipe='tes';judul='Tes samapta';
+    tf='Tes samapta 2 mingguan: lari 12 menit, push up, sit up, dan pull up 1 menit, lalu shuttle run.';
     sf=[pem,T_('Lari 12 menit, sejauh mungkin',720,'Atur napas. Jangan berhenti atau berjalan.'),I_('lari12','Berapa meter yang kamu tempuh dalam 12 menit?'),Z_(180),
-        T_('Push up 1 menit',60,'Lengan lurus penuh, dada turun sampai sekepal dari lantai.'),I_('pushup','Jumlah push up yang sah'),Z_(120),
-        T_('Sit up 1 menit',60,'Siku menyentuh lutut bergantian, punggung kembali ke lantai.'),I_('situp','Jumlah sit up yang sah'),Z_(120),
-        T_('Pull up 1 menit',60,'Dagu melewati palang, tanpa ayunan kaki.'),I_('pullup','Jumlah pull up yang sah'),Z_(120),
-        T_('Shuttle run angka 8',60,'Dua tiang berjarak 10 m, 3 putaran. Tekan Selesai saat finis.',true),I_('shuttle','Waktu shuttle run (detik)')];
-  }else if(k===0||k===6){
-    const km=taper?2:half(Math.min(6,2.5+.25*(w-1)));tipe='lari';
-    tf='Lari santai '+km+' km dengan napas teratur.';
-    sf=[pem,T_('Lari '+km+' km, tempo masih bisa bicara pendek',km*7*60,'Jangan mulai terlalu cepat. Selesaikan jaraknya.',true),I_('lari','Berapa km yang kamu tempuh?',km),pend];
-  }else if(k===1){
-    tipe='kekuatan';tf='Kekuatan: push up '+sn+' x '+rp('pushup')+' dan sit up '+sn+' x '+rp('situp')+', istirahat 60 detik antar set.';
-    sf=[pem].concat(sets_('Push up',sn,rp('pushup'),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(90)],
-                    sets_('Sit up',sn,rp('situp'),60,'Siku ke lutut bergantian. Jangan menarik leher dengan tangan.'));
-  }else if(k===2){
-    const n=taper?3:6;tipe='lari';tf='Kelincahan: lari ringan 1 km, lalu shuttle run angka 8 sebanyak '+n+' kali.';
-    sf=[pem,T_('Lari ringan 1 km',480,'Tekan Selesai saat sudah 1 km.',true)];
-    for(let i=1;i<=n;i++){sf.push(T_('Shuttle run ke-'+i+' dari '+n,40,'Dua tiang berjarak 10 m. Belok rapat, jangan memegang tiang.',true));if(i<n)sf.push(Z_(60))}
-    sf.push(pend);
-  }else if(k===3){
-    tipe='lari';
-    if(ph==='Dasar'||taper){tf='Lari 12 menit dengan tempo sedang, lalu catat jaraknya.';sf=[pem,T_('Lari 12 menit, tempo sedang dan stabil',720,'Jangan berhenti. Tempo yang bisa kamu jaga sampai akhir.'),I_('lari12','Berapa meter yang kamu tempuh?'),pend]}
-    else{const n=ph==='Bangun'?5:7;tf='Interval: lari cepat 400 m sebanyak '+n+' kali, istirahat 90 detik.';sf=[pem];
-      for(let i=1;i<=n;i++){sf.push(T_('Lari cepat 400 m, ulangan '+i+' dari '+n,120,'Kencang tapi terkontrol. Tekan Selesai saat 400 m.',true));if(i<n)sf.push(Z_(90))}
-      sf.push(pend)}
-  }else if(k===4){
-    tipe='kekuatan';const pu=rp('pullup');
-    tf='Kekuatan: pull up '+sn+' x '+pu+', push up 2 x '+rp('pushup')+', dan sit up 2 x '+rp('situp')+'.';
-    sf=[pem].concat(sets_('Pull up',sn,pu,90,'Dagu melewati palang. Belum kuat? Lompat ke atas, lalu turun pelan 5 detik.'),[Z_(90)],
-                    sets_('Push up',2,rp('pushup'),60,'Badan lurus.'),[Z_(60)],sets_('Sit up',2,rp('situp'),60,''));
-  }else{
-    const m=taper?20:Math.min(50,Math.round((30+2*w)*F));tipe='lari';
-    tf='Bersepeda santai '+m+' menit. Boleh diganti renang kalau sempat ke kolam.';
-    sf=[pem,T_('Bersepeda '+m+' menit',m*60,'Pakai helm dan patuhi lalu lintas.'),I_('sepeda','Berapa km yang kamu tempuh?'),pend];
+      T_('Push up 1 menit',60,'Lengan lurus penuh, dada turun sampai sekepal dari lantai.'),I_('pushup','Jumlah push up yang sah'),Z_(120),
+      T_('Sit up 1 menit',60,'Siku menyentuh lutut bergantian, punggung kembali ke lantai.'),I_('situp','Jumlah sit up yang sah'),Z_(120),
+      T_('Pull up 1 menit',60,'Dagu melewati palang, tanpa ayunan kaki.'),I_('pullup','Jumlah pull up yang sah'),Z_(120),
+      T_('Shuttle run angka 8',60,'Dua tiang berjarak 10 m, 3 putaran. Tekan Selesai saat finis.',true),I_('shuttle','Waktu shuttle run (detik)'),pend];
+    if(kaki){sf=sf.filter(s=>!/Lari 12 menit|lari12/.test(s.t+(s.kind||'')));tf='Tes samapta tanpa lari (telapak kaki sedang nyeri): push up, sit up, pull up, dan shuttle run pelan.'}
+  }else if(dow===2){tipe='lari';
+    if(kaki){judul='Sepeda (pengganti lari)';tf='Telapak kaki sedang nyeri, jadi lari diganti sepeda 30 menit.';sf=sepeda(30,'Pengganti lari supaya telapak kaki pulih.')}
+    else if(ph==='Dasar'){judul='Lari ringan + sprint pendek';tf='Lari santai 15 menit, lalu 6 kali lari cepat 100 m dengan jalan kembali.';
+      sf=[pem,T_('Lari santai 15 menit',900,'Mendarat dengan tengah telapak, langkah pendek.',true)];for(let i=1;i<=6;i++){sf.push(T_('Lari cepat 100 m ke-'+i,30,'Cepat tapi rileks, bukan sprint penuh.',true));sf.push(Z_(60))}sf.push(pend)}
+    else if(ph==='Bangun'||taper){const n=taper?3:6;judul='Interval 400 m';tf=`Lari cepat 400 m sebanyak ${n} kali, istirahat jalan 90 detik.`;
+      sf=[pem,T_('Lari santai 5 menit',300,'',true)];for(let i=1;i<=n;i++){sf.push(T_('Lari cepat 400 m, ulangan '+i+' dari '+n,120,'Kencang tapi terkontrol.',true));if(i<n)sf.push(Z_(90))}sf.push(pend)}
+    else{judul='Interval 800 m';tf='Lari cepat 800 m sebanyak 4 kali, istirahat jalan 2 menit.';
+      sf=[pem,T_('Lari santai 5 menit',300,'',true)];for(let i=1;i<=4;i++){sf.push(T_('Lari cepat 800 m, ulangan '+i+' dari 4',240,'Tempo sedikit lebih cepat dari target lari 12 menit.',true));if(i<4)sf.push(Z_(120))}sf.push(pend)}
+  }else if(dow===3){tipe='kaki';judul='Leg day + shuttle';const sq=Math.round((15+3*pi_)*F*bf),sh=taper?3:Math.min(6,3+pi_);
+    tf=`Shuttle run ${sh} kali, squat ${sn} x ${sq}, lunges 3 x 10 per kaki, step up 3 x 12, calf raise pelan 3 x 15, glute bridge 3 x 15.`;
+    sf=[pem];for(let i=1;i<=sh;i++){sf.push(T_('Shuttle run angka 8 ke-'+i,40,'Dua tiang berjarak 10 m. Belok rapat, jangan memegang tiang.',true));sf.push(Z_(60))}
+    sf=sf.concat(sets_('Squat',sn,sq,60,'Lutut searah jari kaki, punggung tegak.'),[Z_(60)],sets_('Lunges (per kaki)',3,10,60,'Lutut belakang hampir menyentuh lantai.'),[Z_(60)],
+      sets_('Step up di bangku atau tangga (per kaki)',3,12,60,'Dorong dengan tumit kaki yang naik.'),[Z_(60)],
+      sets_('Calf raise pelan',3,15,45,'Naik 2 detik, turun 3 detik. Bagus untuk telapak kaki. Berhenti jika nyeri tajam.'),[Z_(45)],
+      sets_('Glute bridge',3,15,45,'Angkat pinggul sampai lurus, tahan 1 detik.'),[pend]);
+  }else if(dow===4){tipe='kekuatan';judul='Upper body B + sepeda';const m=Math.min(30,15+3*w);
+    tf=`${pullTeks(sn).replace(/^p/,'P')}, push up lebar 2 x ${rp('pushup')}, sit up 2 x ${rp('situp')}, lalu sepeda santai ${m} menit.`;
+    sf=[pem].concat(pullBlok(sn),[Z_(90)],sets_('Push up lebar',2,rp('pushup'),60,'Tangan sedikit lebih lebar dari bahu.'),[Z_(60)],
+      sets_('Sit up',2,rp('situp'),60,''),[T_('Bersepeda santai '+m+' menit',m*60,'Untuk daya tahan tanpa membebani telapak kaki.'),pend]);
+  }else if(dow===5){tipe='lari';
+    const m=taper?15:Math.min(35,15+2*w);
+    if(kaki){judul='Sepeda (pengganti lari)';tf=`Telapak kaki sedang nyeri, jadi lari diganti sepeda ${m+10} menit.`;sf=sepeda(m+10)}
+    else{judul='Lari santai';tf=`Lari santai ${m} menit, tempo masih bisa ngobrol. Ringan saja karena besok futsal.`;
+      sf=[pem,T_('Lari santai '+m+' menit',m*60,'Langkah pendek dan ringan. Jangan memaksa.',true),I_('lari','Berapa km yang kamu tempuh?'),pend]}
+  }else if(dow===6){tipe='futsal';judul='Futsal';
+    tf='Futsal. Setelah main, catat lewat tombol ⚽. Tidak futsal? Ganti lari santai atau sepeda 30 menit.';
+    sf=kaki?sepeda(30,'Pengganti futsal saat telapak kaki nyeri.'):[pem,T_('Lari santai 30 menit (pengganti futsal)',1800,'Tempo ngobrol.',true),I_('lari','Berapa km yang kamu tempuh?'),pend];
+  }else{tipe='renang';judul='Renang recovery';const m=Math.min(30,20+w);
+    tf=`Pemulihan: renang santai ${m} menit. Tidak ke kolam? Jalan santai 30 menit. Lalu peregangan panjang.`;
+    sf=[T_('Renang santai atau jalan santai '+m+' menit',m*60,'Pelan dan rileks. Jangan berenang sendirian tanpa pengawas.'),I_('renang','Perkiraan berapa meter yang kamu renangi? (kalau jalan, tekan Tidak diukur)'),
+      T_('Peregangan panjang: betis, paha, punggung, bahu',600,'Tahan setiap gerakan 30 detik.')];
   }
-  let s,ss;const sk=lemahSKD(day);
-  if(left<=1){s='Baca ulang catatan materi ringan 20 menit. Jangan belajar materi baru.';ss=[T_('Baca ulang catatan',1200,'Tenang. Yang penting tidur cukup.')]}
-  else if(k===6&&!taper){s='Tryout SKD lengkap (110 soal, 100 menit), lalu catat skor TWK, TIU, dan TKP.';
-    ss=[T_('Tryout SKD lengkap',6000,'Tanpa membuka catatan. Waktu ketat seperti tes asli.',true),I_('twk','Skor TWK'),I_('tiu','Skor TIU'),I_('tkp','Skor TKP')]}
-  else{s='Latihan soal '+sk+' 30 menit, atau kerjakan 20 soal '+sk+' di menu SKD.';
-    ss=[T_('Latihan soal '+sk+' 30 menit',1800,'Tanpa membuka catatan. Tandai soal yang ragu.',false)].concat(sk!=='TKP'?[I_('benar','Berapa benar dari 30 soal?')]:[])}
-  const p='Peregangan leher dan postur 5 menit, minum air 2 liter, tidur minimal 7 jam.';
-  const ps=[T_('Chin tuck: tarik dagu lurus ke belakang, tahan 5 detik, ulangi 10 kali',60,'Pandangan tetap lurus ke depan, jangan menunduk.'),
-    T_('Putar bahu ke belakang pelan-pelan',45,'Bahu turun, jauhkan dari telinga.'),T_('Miringkan kepala ke kanan, tahan',30,'Pelan, jangan dipaksa.'),
-    T_('Miringkan kepala ke kiri, tahan',30,''),T_('Buka dada: tangan di kusen pintu, condongkan badan ke depan',45,'Ini melawan posisi bungkuk saat main HP.')];
-  return [{id:day+'-f',teks:tf,sesi:sf,tipe},{id:day+'-s',teks:s,sesi:ss,tipe:'skd',sub:sk},{id:day+'-p',teks:p,sesi:ps,tipe:'pulih'}];
+  const tryout=dow===0&&left>1;
+  const s=left<=1?'Guru SKD: baca catatan ringan saja, jangan belajar materi baru.':tryout?'Guru SKD: tryout mini 22 soal (20 menit) di menu SKD.':'Guru SKD: kerjakan tugas hari ini, 20 soal di menu SKD.';
+  const p='Peregangan leher dan telapak kaki 7 menit, minum air 2 liter, tidur minimal 7 jam.';
+  const ps=[T_('Chin tuck: tarik dagu lurus ke belakang, tahan 5 detik, ulangi 10 kali',60,'Pandangan lurus ke depan, jangan menunduk.'),
+    T_('Putar bahu ke belakang pelan-pelan',45,'Bahu turun, jauhkan dari telinga.'),T_('Miringkan kepala ke kanan, tahan',30,''),T_('Miringkan kepala ke kiri, tahan',30,''),
+    T_('Tarik jari kaki kanan ke arah tulang kering, tahan',30,'Ini peregangan untuk plantar fasciitis. Lakukan juga saat bangun tidur.'),T_('Tarik jari kaki kiri, tahan',30,''),
+    T_('Gulingkan botol air dingin di bawah telapak kaki kanan',60,'Tekan pelan, jangan sampai sakit.'),T_('Gulingkan botol di bawah telapak kaki kiri',60,''),
+    T_('Peregangan betis di dinding, kanan lalu kiri',60,'Tumit tetap menempel lantai.')];
+  return [{id:day+'-f',teks:tf,sesi:sf,tipe,judul,menit:sesiMenit(sf),tg,dow},{id:day+'-s',teks:s,sesi:null,tipe:'skd',tryout},{id:day+'-p',teks:p,sesi:ps,tipe:'pulih'}];
 }
 const cntDay=d=>['f','s','p'].filter(x=>DONE.has(d+'-'+x)).length;
 const harianOf=t=>HMAP[t]||null;
@@ -513,11 +538,13 @@ function buildState(){
   if(by>=90){fct*=.8;why.push(['Kemarin main bola '+by+' menit. Kaki perlu pulih, target turun 20%.',0])}
   const nb=nadiBase();if(ht.nadi&&nb&&ht.nadi>=nb+7){fct*=.85;why.push(['Nadi pagi '+ht.nadi+', lebih tinggi dari biasanya ('+nb+'). Tanda tubuh lelah, target diturunkan.',0])}
   if(ht.energi&&ht.energi<=2){fct*=.85;why.push(['Energi pagi rendah. Target sedikit diturunkan.',0])}
+  const kaki=D.checkin.some(c=>c.lokasi==='Telapak kaki'&&Number(c.nyeri)>=3&&diffDays(c.tanggal,t0)<=2);
+  if(kaki)why.push(['Telapak kakimu nyeri dalam 3 hari terakhir. Coach mengganti lari dengan sepeda sampai membaik. Kalau nyeri tidak berkurang dalam seminggu, periksakan ke dokter.',0]);
   fct=Math.max(.5,Math.min(1.15,fct));
   const bolaToday=D.checkin.some(c=>c.tanggal===t0&&isBola(c));
   const inProg=day>=1&&day<=pi.total;
-  const missions=inProg?plan(day,{fct,bola:bolaToday}).map(m=>({...m,done:DONE.has(m.id)})):[];
-  const kejar=day>1&&day-1<=pi.total?plan(day-1,{fct:Math.min(1,fct)}).filter(m=>!DONE.has(m.id)).map(m=>({...m,kejar:true,done:false})):[];
+  const missions=inProg?plan(day,{fct,bola:bolaToday,kaki}).map(m=>({...m,done:DONE.has(m.id)})):[];
+  const kejar=day>1&&day-1<=pi.total?plan(day-1,{fct:Math.min(1,fct),kaki}).filter(m=>!DONE.has(m.id)).map(m=>({...m,kejar:true,done:false})):[];
   const runs=runsAll();
   const pts=D.misi.reduce((a,r)=>a+Number(r.poin||0),0)+runs.reduce((a,r)=>a+5+Math.round(r.km*2),0)
     +D.latihan.reduce((a,l)=>a+(l.jenis==='skd'?10:['twk','tiu','tkp'].includes(l.jenis)?0:5),0)
@@ -525,7 +552,7 @@ function buildState(){
   const lvl=Math.floor(Math.sqrt(pts/25))+1;
   const days={};D.misi.forEach(r=>days[r.tanggal]=1);
   let streak=0,t=days[t0]?t0:addDays(t0,-1);while(days[t]){streak++;t=addDays(t,-1)}
-  return {pi,day,missions,kejar,fct,why,bolaToday,points:pts,level:lvl,from:25*(lvl-1)*(lvl-1),next:25*lvl*lvl,streak,
+  return {pi,day,missions,kejar,fct,why,bolaToday,kaki,points:pts,level:lvl,from:25*(lvl-1)*(lvl-1),next:25*lvl*lvl,streak,
           kemarin:day>1&&day-1<=pi.total?cntDay(day-1):-1};
 }
 function findMisi(id){return st.missions.concat(st.kejar).find(x=>x.id===id)}
@@ -647,23 +674,30 @@ function banner(){
 function misiRow(m){
   const bolaFis=m.done&&m.id.endsWith('-f')&&D.checkin.some(c=>isBola(c)&&diffDays(P.mulai,c.tanggal)+1===Number(m.id.split('-')[0]));
   const lab=m.done?(bolaFis?'⚽':'✓'):'▶ Mulai';
-  const tag={tes:'Tes mingguan',lari:'Lari',kekuatan:'Kekuatan',istirahat:'Istirahat',skd:'SKD '+(m.sub||''),pulih:'Pemulihan'}[m.tipe]||'';
-  return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
+  const tag=(m.judul?m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
+  return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':m.tipe==='skd'?`onclick="mulaiTugas()"`:`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
 }
 function renderMisi(){
   const pi=st.pi,d=st.day,box=$('mis');
   $('pgB').style.width=pi.total?Math.min(100,Math.max(0,d)/pi.total*100)+'%':'0%';
   if(!P.mulai||d<1||d>pi.total){
-    $('pgT').textContent='Program menuju SKD';$('pgS').textContent='';
-    box.innerHTML=`<p class="sub" style="margin-top:12px">${d>pi.total&&P.mulai?'Program selesai. Mulai putaran baru di menu Profil kalau tesnya diundur.':'Latihan bertahap sampai hari SKD: lari, push up, sit up, pull up, shuttle run, dan SKD, dengan 3 misi tiap hari. Atur dulu tanggal SKD di Profil supaya programnya pas.'}</p><button class="btn" onclick="mulai()">Mulai program hari ini</button>`;
+    $('pgT').textContent='🏃 Coach olahraga';$('pgS').textContent='';$('guruHari').innerHTML='<p class="sub">Tugas guru muncul setelah program dimulai.</p>';
+    box.innerHTML=`<p class="sub" style="margin-top:12px">${d>pi.total&&P.mulai?'Program selesai. Mulai putaran baru di menu Profil kalau tesnya diundur.':'Coach menyusun jadwal latihan harian sampai hari tes. Atur dulu tanggal SKD dan kemampuanmu di Profil, lalu mulai.'}</p><button class="btn" onclick="mulai()">Mulai program hari ini</button>`;
     return;
   }
-  $('pgT').textContent='Hari '+d+' dari '+pi.total+', fase '+fase(d,pi.total);
-  $('pgS').textContent=st.streak?('🔥 '+st.streak+' hari beruntun'):'Selesaikan misi untuk memulai rangkaian';
-  let h=banner()+st.missions.map(misiRow).join('');
-  if(st.kejar.length)h+='<p class="lbl" style="margin-top:16px">Misi kejar dari kemarin. Kerjakan untuk mendapat setengah poin.</p>'+st.kejar.map(misiRow).join('');
+  const f=st.missions.find(m=>m.tipe!=='skd'&&m.tipe!=='pulih');
+  $('pgT').textContent='🏃 Coach: '+(f?f.judul:'Latihan');
+  $('pgS').textContent=HARI[f?f.dow:0]+', minggu ke-'+Math.ceil(d/7)+', fase '+fase(d,pi.total)+(st.streak?' · 🔥 '+st.streak+' hari':'');
+  let h=banner()+st.missions.filter(m=>m.tipe!=='skd').map(misiRow).join('');
+  const kj=st.kejar.filter(m=>m.tipe!=='skd');
+  if(kj.length)h+='<p class="lbl" style="margin-top:16px">Kejar dari kemarin (setengah poin)</p>'+kj.map(misiRow).join('');
   if(st.bolaToday)h+='<div class="cb info">Hari ini kamu main bola. Lari diganti bola, tetapi latihan kekuatan tetap wajib.</div>';
-  box.innerHTML=h;
+  box.innerHTML=h;renderGuruHari();
+}
+function renderGuruHari(){
+  const m=st.missions.find(x=>x.tipe==='skd');if(!m){$('guruHari').innerHTML='';return}
+  let T,pr,tot,dn;try{T=tugasHariIni();pr=progresTugas(T);tot=T.buckets.reduce((x,b)=>x+b.n,0);dn=pr.reduce((x,y)=>x+y,0)}catch(e){T=null}
+  $('guruHari').innerHTML=`<div class="m ${m.done?'ok':''}" onclick="${m.done?'goTab(\'skd\')':'mulaiTugas()'}" role="button" tabindex="0"><span class="ck">✓</span><p><small>${T?dn+' / '+tot+' soal':''}</small>${esc(T?T.msg:m.teks)}</p><b>${m.done?'✓':'▶ Mulai'}</b></div>`;
 }
 function optRow(n,vals,cur){
   return `<div class="opts" data-n="${n}">`+vals.map(v=>{const a=Array.isArray(v)?v:[v,v];return `<button type="button" class="opt ${cur!=null&&String(cur)===String(a[0])?'on':''}" data-v="${esc(a[0])}" onclick="pickOpt(this)">${esc(a[1])}</button>`}).join('')+'</div>';
@@ -716,7 +750,7 @@ function formCheckin(o){
   <div class="lbl">Medan</div>${optRow('ciMd',['Datar','Tanjakan','Rumput','Pasir','Dalam rumah'])}
   <div class="lbl">Cuaca</div>${optRow('ciC',['Teduh','Panas terik','Hujan','Malam'])}`}
   <div class="lbl">Nyeri (0 tidak ada, 5 sangat nyeri)</div>${optRow('ciNy',[0,1,2,3,4,5],0)}
-  <div id="ciL" style="display:none"><div class="lbl">Di mana?</div>${optRow('ciLk',['Leher','Bahu','Punggung','Lutut','Pergelangan kaki','Betis','Paha','Lainnya'])}</div>
+  <div id="ciL" style="display:none"><div class="lbl">Di mana?</div>${optRow('ciLk',['Telapak kaki','Leher','Bahu','Punggung','Lutut','Pergelangan kaki','Betis','Paha','Lainnya'])}</div>
   <label class="lbl">Catatan<input id="ciX" placeholder="Opsional"></label>
   <div class="row"><button class="btn" onclick="kirimCheckin()">Simpan</button><button class="btn ghost" onclick="lewatiCheckin(this)">Lewati</button></div><p class="msg" id="ciMsg"></p>`,true);
 }
@@ -726,6 +760,7 @@ function balasCheckin(r){
   if(r.nyeri>=3){let t='Nyeri '+loc+' skala '+r.nyeri+'. Besok latihan ringan dulu. Kalau nyeri bertahan beberapa hari atau makin parah, periksakan ke dokter.';
     if(r.lokasi==='Leher'){const n=D.checkin.filter(c=>c.lokasi==='Leher'&&diffDays(c.tanggal,today())<7).length+1;
       if(n>=3)t+=' Leher sudah '+n+' kali nyeri dalam seminggu. Angkat HP setinggi mata, kurangi menunduk, dan jangan lewatkan peregangan leher di misi pemulihan.'}
+    if(r.lokasi==='Telapak kaki')t+=' Untuk plantar fasciitis: coach mengganti lari dengan sepeda sampai nyerinya turun. Lakukan peregangan telapak kaki pagi dan malam, pakai sepatu yang empuk, dan hindari tanpa alas kaki di lantai keras.';
     return [t,false]}
   if(r.rpe<=3&&r.jenis==='sesi')return ['Cuma '+r.rpe+' dari 10? Tenagamu masih tersisa banyak. Besok lebih keras!',true];
   if(r.rpe>=9)return ['Kerja keras. Malam ini makan dengan lauk berprotein, minum cukup, dan tidur minimal 7 jam.',false];
@@ -737,8 +772,9 @@ async function gantiBola(row){
   const pi=prog(),dn=diffDays(P.mulai,row.tanggal)+1;if(dn<1||dn>pi.total)return 'Tercatat.';
   const ws=wkStart(row.tanggal),n=D.checkin.filter(c=>isBola(c)&&wkStart(c.tanggal)===ws).length+1;
   const m=plan(dn)[0];
+  if(m.tipe==='futsal'){if(DONE.has(dn+'-f'))return 'Tercatat.';if(diffDays(row.tanggal,today())>1)return 'Tercatat.';const r=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:dn+'-f',poin:10});return r.error&&r.error.code!=='23505'?r.error.message:'Jadwal futsal tuntas. +10 poin.'}
   if(m.tipe==='tes')return 'Tes mingguan tetap wajib. Kalau sudah terlalu capek, kerjakan besok lewat misi kejar.';
-  if(m.tipe==='kekuatan')return 'Bola tidak melatih push up, sit up, dan pull up. Misi kekuatan hari itu tetap wajib, versi 70%.';
+  if(m.tipe==='kekuatan'||m.tipe==='kaki')return 'Bola tidak menggantikan latihan kekuatan. Latihan hari itu tetap wajib, versi 70%.';
   if(m.tipe==='istirahat')return 'Tercatat. Jangan main terlalu berat menjelang tes.';
   if(n>2)return 'Batas pengganti 2 kali seminggu sudah habis. Misi fisik tetap wajib.';
   if(DONE.has(dn+'-f'))return 'Misi fisik hari itu sudah selesai sebelumnya.';
@@ -812,7 +848,26 @@ function kalStat(){
   if(cntDay(pi.day)>=3)rekor=Math.max(rekor,cur);
   return {n,full,part,pct:n?Math.round(full/n*100):0,cur,rekor,bola:D.checkin.filter(isBola).length};
 }
+let JW=0;
+function jdwNav(n){JW+=n;renderJadwal()}
+function renderJadwal(){
+  const box=$('jdw');if(!P.mulai){box.innerHTML='<p class="msg">Jadwal muncul setelah program dimulai di menu Hari ini.</p>';$('jdT').textContent='Jadwal coach';$('jdS').textContent='';return}
+  const pi=st.pi,ws=addDays(wkStart(today()),7*JW),t0=today();
+  const dn0=diffDays(P.mulai,ws)+1,mg=Math.ceil(Math.max(1,dn0)/7);
+  $('jdT').textContent=JW===0?'Minggu ini':JW===1?'Minggu depan':JW===-1?'Minggu lalu':(JW>0?JW+' minggu lagi':(-JW)+' minggu lalu');
+  const ph=dn0+3>=1&&dn0+3<=pi.total?fase(Math.max(1,dn0+3),pi.total):'';
+  $('jdS').textContent=fmtTgl(ws)+' sampai '+fmtTgl(addDays(ws,6))+(ph?', minggu ke-'+mg+', fase '+ph:'');
+  const DESK={Dasar:'Fase Dasar: membangun pondasi dan teknik. Beban ringan sampai sedang.',Bangun:'Fase Bangun: beban naik, interval lebih panjang.',Puncak:'Fase Puncak: intensitas tertinggi, mirip tes asli.',Pengurangan:'Fase Pengurangan: beban turun supaya tubuh segar di hari tes.'};
+  let h=ph?`<p class="sub" style="margin:0 0 8px">${DESK[ph]}</p>`:'';
+  for(let i=0;i<7;i++){const tg=addDays(ws,i),dn=diffDays(P.mulai,tg)+1;
+    if(dn<1||dn>pi.total){h+=`<div class="jd off"><b>${HARI[(i+1)%7]}</b><span>Di luar program</span></div>`;continue}
+    const pl=plan(dn,{kaki:st.kaki}),f=pl[0],dn_=DONE.has(dn+'-f'),lewat=tg<t0;
+    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${esc(f.judul)}<small>±${f.menit} menit${pl[1].tryout?', SKD: tryout mini':', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
+      <p class="sub" style="margin:8px 0 4px">${esc(f.teks)}</p><ol class="jdl">${f.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol></details>`}
+  box.innerHTML=h;
+}
 function renderKal(){
+  renderJadwal();
   if(!CALM)CALM=today().slice(0,7);
   const [y,m]=CALM.split('-').map(Number),first=new Date(y,m-1,1),days=new Date(y,m,0).getDate(),off=(first.getDay()+6)%7,t0=today();
   $('calT').textContent=first.toLocaleDateString('id-ID',{month:'long',year:'numeric'});
@@ -1362,7 +1417,7 @@ function ambilSoal(sub,top,n){
 }
 /* ---------- Tugas dari guru ---------- */
 function tugasHariIni(){
-  const t0=today(),past=D.jawaban.filter(j=>j.tanggal<t0),tes=st.missions.some(m=>m.tipe==='skd'&&/Tryout/.test(m.teks));
+  const t0=today(),past=D.jawaban.filter(j=>j.tanggal<t0),tes=st.missions.some(m=>m.tipe==='skd'&&m.tryout);
   if(tes)return {jenis:'tryout',msg:'Hari ini jadwal tes mingguan. Kerjakan tryout mini untuk mengukur perkembanganmu.',buckets:[{sub:'TWK',n:6},{sub:'TIU',n:7},{sub:'TKP',n:9}],sec:20*60};
   if(past.length<30)return {jenis:'latihan',msg:'Guru belum cukup mengenal kemampuanmu. Kerjakan 15 soal campuran dulu, supaya kelemahanmu kelihatan.',buckets:[{sub:'TWK',n:5},{sub:'TIU',n:5},{sub:'TKP',n:5}]};
   const tp=statTopikDari(past).filter(t=>t.n>=3),ss=statSub(past);
