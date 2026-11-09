@@ -1679,6 +1679,332 @@ const GEN={
       `Untung ${p}% × ${gRp(b)} = ${gRp(b*p/100)}. Harga jual = ${gRp(b)} + ${gRp(b*p/100)} = ${gRp(j)}.`);
   }
 };
+/* ---------- Generator TIU model FR SKD 2026 (silogisme, analogi kata, argumen, analitis, taksiran, deret kotak, kecukupan data, pecahan) ---------- */
+const gCap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const gLet=()=>GP(['P','Q','R','S','T','U','V','W','X','Y','Z','K','L','M','N']);
+// opsi angka diurutkan naik seperti di soal FR
+function gMkUrut(topik,q,benar,salah,pemb){
+  const all=[benar,...salah];if(new Set(all).size!==5||all.some(x=>typeof x!=='number'))return null;
+  const s=[...all].sort((a,b)=>a-b),pos=s.indexOf(benar);
+  return {ref:'gen:'+topik,subtes:'TIU',topik,pertanyaan:q,pilihan:s.map(gN),nilai:[0,1,2,3,4].map(i=>i===pos?5:0),pembahasan:pemb,gen:true};
+}
+// opsi tetap (tidak diacak)
+function gMkTetap(topik,q,opsi,idx,pemb){
+  return {ref:'gen:'+topik,subtes:'TIU',topik,pertanyaan:q,pilihan:opsi,nilai:[0,1,2,3,4].map(i=>i===idx?5:0),pembahasan:pemb,gen:true};
+}
+const NAMA_L=['Andi','Budi','Citra','Dewi','Eko','Fani','Galih','Hani','Indra','Joko','Kirana','Lina','Maya','Nanda','Oki','Putri','Raka','Salsa','Tono','Vina','Wawan','Yuni','Zaki','Rafi','Dimas','Sari','Bayu','Dini','Fajar','Gina'];
+const gNama=n=>GS(NAMA_L).slice(0,n);
+
+/* --- Silogisme: tema cerita dengan rantai jika-maka --- */
+// n: rantai keadaan [positif, negatif]; alt: pilihan "atau" [positif, negatif]
+const SIL_TEMA=[
+ {c:'Panitia bazar sekolah sedang mempersiapkan tempat penjualan.',n:[['tempat bazar sudah tertata','tempat bazar belum tertata'],['pembeli dapat berbelanja dengan nyaman','pembeli tidak dapat berbelanja dengan nyaman'],['penjualan di bazar berjalan lancar','penjualan di bazar tidak berjalan lancar'],['panitia mendapat keuntungan','panitia tidak mendapat keuntungan']],alt:['tenda utama belum terpasang','tenda utama sudah terpasang']},
+ {c:'Pada musim hujan, kepala desa mempersiapkan akses menuju sebuah dusun.',n:[['jalan utama tidak tergenang','jalan utama tergenang'],['kendaraan dapat melewati jalan dengan lancar','kendaraan tidak dapat melewati jalan dengan lancar'],['pengiriman bahan makanan tidak terlambat','pengiriman bahan makanan terlambat'],['warga dusun tidak kekurangan bahan makanan','warga dusun kekurangan bahan makanan']],alt:['jembatan mengalami kerusakan','jembatan tidak mengalami kerusakan']},
+ {c:'Menjelang panen raya, pemerintah desa memperbaiki akses ke kawasan pertanian.',n:[['jalan menuju sawah dalam kondisi baik','jalan menuju sawah rusak'],['kendaraan pengangkut panen dapat masuk dengan mudah','kendaraan pengangkut panen sulit masuk'],['hasil panen sampai di pasar tepat waktu','hasil panen terlambat sampai di pasar'],['ketersediaan bahan pangan di pasar tetap terjaga','ketersediaan bahan pangan di pasar terganggu']],alt:['jembatan utama mengalami kerusakan','jembatan utama tidak mengalami kerusakan']},
+ {c:'Sekolah akan mengadakan pentas seni.',n:[['panggung sudah selesai dihias','panggung belum selesai dihias'],['acara dapat dipersiapkan sesuai jadwal','acara tidak dapat dipersiapkan sesuai jadwal'],['gladi bersih dilakukan tepat waktu','gladi bersih terlambat dilakukan'],['pentas seni dimulai sesuai jadwal','pentas seni tidak dimulai sesuai jadwal']],alt:['peralatan suara belum tersedia','peralatan suara sudah tersedia']},
+ {c:'Koperasi sekolah menyiapkan program penjualan alat tulis.',n:[['persediaan alat tulis mencukupi','persediaan alat tulis tidak mencukupi'],['kebutuhan siswa terpenuhi','kebutuhan siswa tidak terpenuhi'],['siswa tidak perlu membeli alat tulis di luar sekolah','siswa harus membeli alat tulis di luar sekolah'],['penjualan koperasi meningkat','penjualan koperasi tidak meningkat']],alt:['kendaraan pengiriman mengalami kerusakan','kendaraan pengiriman tidak mengalami kerusakan']},
+ {c:'Puskesmas kecamatan menyiapkan kegiatan vaksinasi massal.',n:[['stok vaksin sudah tiba','stok vaksin belum tiba'],['vaksinasi dapat dimulai pagi hari','vaksinasi tidak dapat dimulai pagi hari'],['seluruh warga terdaftar dapat dilayani','tidak seluruh warga terdaftar dapat dilayani'],['target vaksinasi desa tercapai','target vaksinasi desa tidak tercapai']],alt:['petugas kesehatan sedang cuti bersama','petugas kesehatan tidak sedang cuti bersama']},
+ {c:'Perpustakaan daerah menyiapkan layanan pinjam buku digital.',n:[['jaringan internet perpustakaan stabil','jaringan internet perpustakaan tidak stabil'],['aplikasi pinjam buku dapat diakses','aplikasi pinjam buku tidak dapat diakses'],['pengunjung dapat meminjam buku digital','pengunjung tidak dapat meminjam buku digital'],['jumlah peminjam bulan ini meningkat','jumlah peminjam bulan ini tidak meningkat']],alt:['server sedang dalam perbaikan','server tidak sedang dalam perbaikan']},
+ {c:'Dinas perhubungan mengatur arus mudik di sebuah kota.',n:[['jalur alternatif dibuka','jalur alternatif ditutup'],['kepadatan di jalan utama berkurang','kepadatan di jalan utama tidak berkurang'],['waktu tempuh pemudik lebih singkat','waktu tempuh pemudik tidak lebih singkat'],['pemudik tiba di kampung halaman tepat waktu','pemudik tidak tiba di kampung halaman tepat waktu']],alt:['terjadi longsor di jalur alternatif','tidak terjadi longsor di jalur alternatif']},
+ {c:'Sebuah pabrik roti menyiapkan produksi untuk pesanan besar.',n:[['bahan tepung sudah tersedia','bahan tepung belum tersedia'],['produksi roti dapat berjalan','produksi roti tidak dapat berjalan'],['pesanan selesai sebelum tenggat','pesanan tidak selesai sebelum tenggat'],['pelanggan memberikan pesanan ulang','pelanggan tidak memberikan pesanan ulang']],alt:['mesin oven mengalami kerusakan','mesin oven tidak mengalami kerusakan']},
+ {c:'Karang taruna menyiapkan lomba tujuh belasan di lapangan desa.',n:[['lapangan sudah dibersihkan','lapangan belum dibersihkan'],['lomba dapat dimulai tepat waktu','lomba tidak dapat dimulai tepat waktu'],['seluruh peserta dapat mengikuti lomba sesuai jadwal','tidak seluruh peserta dapat mengikuti lomba sesuai jadwal'],['pembagian hadiah dilakukan sore hari','pembagian hadiah tidak dilakukan sore hari']],alt:['hujan deras turun sejak pagi','hujan deras tidak turun sejak pagi']},
+ {c:'Kantor kecamatan menerapkan layanan administrasi daring.',n:[['sistem antrean daring berfungsi','sistem antrean daring tidak berfungsi'],['warga tidak perlu mengantre lama','warga harus mengantre lama'],['pelayanan surat selesai dalam satu hari','pelayanan surat tidak selesai dalam satu hari'],['kepuasan warga terhadap pelayanan meningkat','kepuasan warga terhadap pelayanan tidak meningkat']],alt:['listrik kantor padam','listrik kantor tidak padam']},
+ {c:'Sebuah tim futsal mempersiapkan diri menghadapi turnamen.',n:[['seluruh pemain mengikuti latihan rutin','tidak seluruh pemain mengikuti latihan rutin'],['kekompakan tim meningkat','kekompakan tim tidak meningkat'],['tim lolos babak penyisihan','tim tidak lolos babak penyisihan'],['tim mendapat dana pembinaan','tim tidak mendapat dana pembinaan']],alt:['lapangan latihan sedang direnovasi','lapangan latihan tidak sedang direnovasi']},
+ {c:'Panitia seleksi menyiapkan ujian berbasis komputer.',n:[['seluruh komputer sudah diperiksa','komputer belum seluruhnya diperiksa'],['ujian dapat dimulai serentak','ujian tidak dapat dimulai serentak'],['nilai peserta dapat diumumkan hari itu juga','nilai peserta tidak dapat diumumkan hari itu juga'],['peserta mengetahui kelulusannya lebih cepat','peserta tidak mengetahui kelulusannya lebih cepat']],alt:['jaringan internet terputus','jaringan internet tidak terputus']},
+ {c:'Petani di sebuah desa bersiap memasuki musim tanam.',n:[['saluran irigasi berfungsi baik','saluran irigasi tidak berfungsi baik'],['sawah mendapat pasokan air cukup','sawah tidak mendapat pasokan air cukup'],['padi tumbuh dengan subur','padi tidak tumbuh dengan subur'],['hasil panen musim ini melimpah','hasil panen musim ini tidak melimpah']],alt:['bendungan desa mengalami kebocoran','bendungan desa tidak mengalami kebocoran']},
+ {c:'Rumah sakit daerah menambah layanan pemeriksaan malam hari.',n:[['jumlah dokter jaga mencukupi','jumlah dokter jaga tidak mencukupi'],['pasien malam dapat segera ditangani','pasien malam tidak dapat segera ditangani'],['antrean di unit gawat darurat berkurang','antrean di unit gawat darurat tidak berkurang'],['keluhan pasien menurun','keluhan pasien tidak menurun']],alt:['ruang pemeriksaan sedang direnovasi','ruang pemeriksaan tidak sedang direnovasi']}
+];
+// tema orang: "Jika seseorang ..., maka ia ..."
+const SIL_ORANG=[
+ {p:['menjadi ketua kelas','tidak menjadi ketua kelas'],q:['mengikuti pemilihan ketua kelas','tidak mengikuti pemilihan ketua kelas'],r:['tercatat sebagai calon','tidak tercatat sebagai calon'],alt:['menjadi wakil ketua kelas','tidak menjadi wakil ketua kelas']},
+ {p:['diterima sebagai anggota tim penelitian','tidak diterima sebagai anggota tim penelitian'],q:['lulus wawancara','tidak lulus wawancara'],r:['mengumpulkan proposal tepat waktu','tidak mengumpulkan proposal tepat waktu'],alt:['menjadi anggota tim dokumentasi','tidak menjadi anggota tim dokumentasi']},
+ {p:['mengikuti lomba debat','tidak mengikuti lomba debat'],q:['mengikuti latihan debat','tidak mengikuti latihan debat'],r:['mendapat izin pembina','tidak mendapat izin pembina'],alt:['mengikuti lomba pidato','tidak mengikuti lomba pidato']},
+ {p:['lolos seleksi SKB','tidak lolos seleksi SKB'],q:['lolos ambang batas SKD','tidak lolos ambang batas SKD'],r:['hadir pada hari tes SKD','tidak hadir pada hari tes SKD'],alt:['mendaftar di formasi lain','tidak mendaftar di formasi lain']},
+ {p:['terpilih menjadi pengibar bendera','tidak terpilih menjadi pengibar bendera'],q:['mengikuti latihan baris-berbaris','tidak mengikuti latihan baris-berbaris'],r:['lolos tes kesehatan','tidak lolos tes kesehatan'],alt:['menjadi petugas upacara cadangan','tidak menjadi petugas upacara cadangan']},
+ {p:['mendapat beasiswa prestasi','tidak mendapat beasiswa prestasi'],q:['memiliki nilai rapor di atas 85','tidak memiliki nilai rapor di atas 85'],r:['rajin mengikuti kelas tambahan','tidak rajin mengikuti kelas tambahan'],alt:['mendapat beasiswa kurang mampu','tidak mendapat beasiswa kurang mampu']},
+ {p:['menjadi anggota tim inti','tidak menjadi anggota tim inti'],q:['lulus tes kebugaran','tidak lulus tes kebugaran'],r:['berlatih lari setiap pagi','tidak berlatih lari setiap pagi'],alt:['menjadi pemain cadangan','tidak menjadi pemain cadangan']}
+];
+function genSilogisme(){
+  const pakaiOrang=Math.random()<.35;
+  let N,alt,ctx,subj='';
+  if(pakaiOrang){const t=GP(SIL_ORANG),nm=GP(NAMA_L);N=[t.p,t.q,t.r];alt=t.alt;ctx='';subj=nm;
+    // ubah rantai jadi bentuk "nama ..." untuk opsi
+  }else{const t=GP(SIL_TEMA);N=t.n;alt=t.alt;ctx=t.c+' '}
+  const tipe=GLV===1?GP([0,2]):GP([0,1,1,2,3]);
+  const L=GLV===3?Math.min(N.length,4):3;
+  const st=(x)=>pakaiOrang?`${subj} ${x}`:x; // kalimat fakta/opsi
+  const J=(a,b)=>pakaiOrang?`Jika seseorang ${a}, maka ia ${b}.`:`Jika ${a}, maka ${b}.`;
+  let q,benar,salah,pemb;
+  if(tipe===0){ // jika P maka Q; tidak Q; P atau R -> R
+    const P=N[0],Q=N[1];
+    q=ctx+J(P[0],Q[0])+` Faktanya, ${st(Q[1])}. Diketahui pula ${st(P[0])} atau ${st(alt[0])}.`;
+    benar=gCap(st(alt[0]));salah=[gCap(st(P[0])),gCap(st(Q[0])),gCap(st(alt[1])),gCap(st(N[2][0]))];
+    pemb=`Jika P maka Q. Faktanya tidak Q, maka tidak P (modus tollens): ${st(P[1])}. Karena "P atau R" dan P salah, maka R benar: ${st(alt[0])}.`;
+  }else if(tipe===1){ // rantai P->Q->R(->S); P atau A; tidak A -> akhir
+    const ch=N.slice(0,L);let s=ctx;for(let i=0;i<ch.length-1;i++)s+=J(ch[i][0],ch[i+1][0])+' ';
+    s+=`Diketahui ${st(ch[0][0])} atau ${st(alt[0])}. Setelah diperiksa, ${st(alt[1])}.`;q=s;
+    const akhir=ch[ch.length-1];benar=gCap(st(akhir[0]));salah=[gCap(st(ch[0][1])),gCap(st(ch[1][1])),gCap(st(akhir[1])),gCap(st(alt[0]))];
+    pemb=`"P atau A" dan A tidak terjadi, maka P benar: ${st(ch[0][0])}. Lalu ikuti rantai jika-maka (silogisme) sampai akhir: ${ch.map(x=>x[0]).join(' → ')}. Jadi ${st(akhir[0])}.`;
+  }else if(tipe===2){ // modus ponens berantai
+    const ch=N.slice(0,L);let s=ctx;for(let i=0;i<ch.length-1;i++)s+=J(ch[i][0],ch[i+1][0])+' ';
+    s+=`Faktanya, ${st(ch[0][0])}.`;q=s;const akhir=ch[ch.length-1];
+    benar=gCap(st(akhir[0]));salah=[gCap(st(ch[0][1])),gCap(st(akhir[1])),gCap(st(ch[1][1])),gCap(st(alt[0]))];
+    pemb=`P benar, maka Q benar (modus ponens), dan seterusnya: ${ch.map(x=>x[0]).join(' → ')}. Jadi ${st(akhir[0])}. Pilihan tentang "${alt[0]}" tidak bisa disimpulkan dari premis.`;
+  }else{ // rantai lalu ingkaran akhir -> ingkaran awal
+    const ch=N.slice(0,L);let s=ctx;for(let i=0;i<ch.length-1;i++)s+=J(ch[i][0],ch[i+1][0])+' ';
+    const akhir=ch[ch.length-1];s+=`Faktanya, ${st(akhir[1])}.`;q=s;
+    benar=gCap(st(ch[0][1]));salah=[gCap(st(ch[0][0])),gCap(st(ch[1][0])),gCap(st(akhir[0])),gCap(st(alt[0]))];
+    pemb=`Rantai: ${ch.map(x=>x[0]).join(' → ')}. Ujungnya tidak terjadi, maka awalnya juga tidak terjadi (modus tollens). Jadi ${st(ch[0][1])}.`;
+  }
+  return gMk('Silogisme',q+'\nKesimpulan yang tepat adalah ...',benar,salah,pemb);
+}
+
+/* --- Analogi kata: kelompok hubungan --- */
+const ANA_REL=[
+ {d:(a,b)=>`${a} menghasilkan karya berupa ${b}`,p:[['SUTRADARA','FILM'],['PENULIS','BUKU'],['PELUKIS','LUKISAN'],['PEMAHAT','PATUNG'],['PENJAHIT','BAJU'],['KOMPONIS','LAGU'],['PENYAIR','PUISI'],['KOKI','MASAKAN'],['ARSITEK','RANCANGAN BANGUNAN']]},
+ {d:(a,b)=>`${b} adalah alat kerja ${a}`,p:[['DOKTER','STETOSKOP'],['NELAYAN','JALA'],['PETANI','CANGKUL'],['PELUKIS','KUAS'],['PENJAHIT','JARUM'],['FOTOGRAFER','KAMERA'],['TUKANG KAYU','GERGAJI'],['PELAUT','KOMPAS'],['ARSITEK','CETAK BIRU']]},
+ {d:(a,b)=>`${a} digunakan untuk ${b.toLowerCase()}`,p:[['PENA','MENULIS'],['KUAS','MELUKIS'],['CANGKUL','MENGGALI'],['JARUM','MENJAHIT'],['GUNTING','MEMOTONG'],['SAPU','MENYAPU'],['PISAU','MENGIRIS'],['KUNCI','MEMBUKA'],['SETRIKA','MERAPIKAN PAKAIAN']]},
+ {d:(a,b)=>`${a} adalah alat untuk mengukur ${b.toLowerCase()}`,p:[['JAM','WAKTU'],['TERMOMETER','SUHU'],['TIMBANGAN','BERAT'],['PENGGARIS','PANJANG'],['BAROMETER','TEKANAN UDARA'],['SPEEDOMETER','KECEPATAN'],['HIGROMETER','KELEMBAPAN']]},
+ {d:(a,b)=>`sifat ${a.toLowerCase()} adalah ${b.toLowerCase()}`,p:[['ES','DINGIN'],['API','PANAS'],['GULA','MANIS'],['GARAM','ASIN'],['KACA','BENING'],['GUNUNG','TINGGI'],['JURANG','DALAM'],['SINGA','BUAS'],['PISAU','TAJAM'],['KAPAS','LEMBUT'],['BATU','KERAS'],['BUNGA','WANGI']]},
+ {d:(a,b)=>`${b} adalah bagian dari ${a}`,p:[['PIANO','TUTS'],['GITAR','SENAR'],['SEPEDA','PEDAL'],['BURUNG','SAYAP'],['IKAN','SIRIP'],['BUKU','HALAMAN'],['MOBIL','SETIR'],['POHON','AKAR'],['RUMAH','JENDELA']]},
+ {d:(a,b)=>`${a} dapat menyebabkan ${b.toLowerCase()}`,p:[['GEMPA','TSUNAMI'],['HUJAN','BANJIR'],['KEMARAU','KEKERINGAN'],['VIRUS','PENYAKIT'],['API','KEBAKARAN'],['BERLATIH','MAHIR'],['BEGADANG','MENGANTUK']]},
+ {d:(a,b)=>`${a} disimpan atau berada di ${b.toLowerCase()}`,p:[['BUKU','PERPUSTAKAAN'],['OBAT','APOTEK'],['UANG','BANK'],['PESAWAT','BANDARA'],['KAPAL','PELABUHAN'],['KERETA','STASIUN'],['MOBIL','GARASI'],['LUKISAN','GALERI']]},
+ {d:(a,b)=>`${a} mengemudikan ${b.toLowerCase()}`,p:[['SOPIR','MOBIL'],['PILOT','PESAWAT'],['NAKHODA','KAPAL'],['MASINIS','KERETA'],['KUSIR','DELMAN'],['JOKI','KUDA']]},
+ {d:(a,b)=>`${a} adalah bahan untuk membuat ${b.toLowerCase()}`,p:[['KAYU','MEJA'],['BENANG','KAIN'],['TEPUNG','ROTI'],['SUSU','KEJU'],['KEDELAI','TEMPE'],['PASIR','KACA'],['TANAH LIAT','GENTENG'],['EMAS','PERHIASAN']]},
+ {d:(a,b)=>`${a} adalah tahap awal sebelum menjadi ${b.toLowerCase()}`,p:[['KEPOMPONG','KUPU-KUPU'],['TELUR','AYAM'],['BERUDU','KATAK'],['BIJI','POHON'],['KUNCUP','BUNGA'],['BAYI','ANAK']]},
+ {d:(a,b)=>`${a} melindungi dari ${b.toLowerCase()}`,p:[['PAYUNG','HUJAN'],['MANTEL','DINGIN'],['MASKER','DEBU'],['HELM','BENTURAN'],['TABIR SURYA','SINAR MATAHARI'],['VAKSIN','PENYAKIT']]},
+ {d:(a,b)=>`${a} dipakai di ${b.toLowerCase()}`,p:[['KACAMATA','MATA'],['CINCIN','JARI'],['TOPI','KEPALA'],['SEPATU','KAKI'],['KALUNG','LEHER'],['ANTING','TELINGA'],['JAM TANGAN','PERGELANGAN TANGAN']]},
+ {d:(a,b)=>`${b} adalah tindak lanjut dari ${a.toLowerCase()}`,p:[['MASALAH','SOLUSI'],['PERTANYAAN','JAWABAN'],['HIPOTESIS','PEMBUKTIAN'],['KLAIM','VERIFIKASI'],['DATA','ANALISIS'],['KRITIK','PERBAIKAN'],['DISKUSI','KEPUTUSAN']]},
+ {d:(a,b)=>`${b} adalah suara ${a.toLowerCase()}`,p:[['ULAR','DESIS'],['KUCING','MEONG'],['ANJING','GONGGONG'],['AYAM','KOKOK'],['SAPI','LENGUH'],['KAMBING','EMBIK']]}
+];
+function genAnalogiKata(){
+  const ri=GR(0,ANA_REL.length-1),R=ANA_REL[ri],[s1,s2]=GS(R.p).slice(0,2);
+  const relSama=(x,y)=>R.p.some(p=>p[0]===x&&p[1]===y);
+  if(GLV>=2&&Math.random()<.35){ // A : B = ... : ...
+    const benar=`${gCap(s2[0].toLowerCase())} : ${gCap(s2[1].toLowerCase())}`,w=new Set();let t=0;
+    while(w.size<4&&t++<200){const r2=GP(ANA_REL);if(r2===R)continue;const p=GP(r2.p);if(relSama(p[0],p[1]))continue;
+      const f=Math.random()<.4?[p[1],p[0]]:p;w.add(`${gCap(f[0].toLowerCase())} : ${gCap(f[1].toLowerCase())}`)}
+    if(w.size<4)return null;
+    return gMk('Analogi kata',`${s1[0]} : ${s1[1]} = ... : ...`,benar,[...w],`Hubungannya: ${R.d(s1[0],s1[1])}. Pasangan yang sama: ${R.d(s2[0],s2[1])}. Pilihan lain hubungannya berbeda atau urutannya terbalik.`);
+  }
+  // A : B = C : ?
+  const C=s2[0],D=s2[1],cand=new Set();
+  ANA_REL.forEach(r=>{if(r!==R)r.p.forEach(p=>{if(p[0]===C)cand.add(p[1]);if(p[1]===C)cand.add(p[0])})}); // jebakan: pasangan C di hubungan lain
+  const jebak=GS([...cand]).slice(0,2),w=new Set(jebak.filter(x=>x!==D&&!relSama(C,x)));
+  const pool=GS(R.p.map(p=>p[1])).concat(GS(R.p.map(p=>p[0])),GS(ANA_REL.flatMap(r=>r.p.flatMap(p=>[p[0],p[1]]))));
+  for(const x of pool){if(w.size>=4)break;if(x!==D&&x!==C&&!relSama(C,x))w.add(x)}
+  const fmt=s=>gCap(s.toLowerCase());
+  return gMk('Analogi kata',`${s1[0]} : ${s1[1]} = ${C} : ...`,fmt(D),[...w].slice(0,4).map(fmt),`Hubungannya: ${R.d(s1[0],s1[1])}. Dengan hubungan yang sama, ${R.d(C,D)}. Jadi jawabannya ${fmt(D)}.`);
+}
+
+/* --- Argumen: memperlemah / memperkuat --- */
+// k: klaim; l: pelemah terkuat; s: penguat; n: pernyataan yang tidak relevan/lemah
+const ARG=[
+ {k:'Belajar dengan menonton video edukasi dapat meningkatkan nilai siswa karena siswa dapat mengulang materi kapan saja. Oleh karena itu, semakin banyak siswa yang belajar melalui video edukasi, semakin tinggi rata-rata nilai kelas.',l:'Sebagian besar video edukasi yang ditonton siswa tidak sesuai dengan kurikulum ujian sehingga siswa menguasai materi yang salah',s:'Siswa yang rutin mengulang materi lewat video edukasi terbukti memperoleh nilai ujian lebih tinggi dibanding yang tidak',n:['Video edukasi berdurasi lebih singkat daripada pembelajaran tatap muka','Sekolah telah menyediakan proyektor di setiap kelas','Video edukasi dapat diakses gratis sehingga menghemat biaya bimbingan belajar']},
+ {k:'Metode diskusi kelompok dapat meningkatkan pemahaman siswa karena siswa saling bertukar ide. Oleh karena itu, semakin sering diskusi kelompok diterapkan, semakin tinggi hasil belajar siswa.',l:'Banyak diskusi kelompok didominasi beberapa siswa saja, sehingga siswa lain hanya diam dan tidak ikut berpikir',s:'Siswa yang aktif bertukar ide dalam diskusi kelompok menunjukkan peningkatan nilai pada ulangan berikutnya',n:['Guru telah menyediakan materi diskusi yang lengkap','Sekolah menambah jam pelajaran untuk diskusi kelompok','Diskusi kelompok membuat siswa lebih percaya diri berbicara']},
+ {k:'Penggunaan pupuk organik dapat meningkatkan kesuburan tanah karena mengandung mikroorganisme yang baik. Oleh karena itu, semakin banyak petani beralih ke pupuk organik, semakin subur tanah pertanian di wilayah itu.',l:'Pupuk organik butuh 3–6 bulan untuk terurai, sedangkan petani menanam tiap 2 bulan sehingga mikroorganismenya belum sempat bekerja',s:'Uji laboratorium menunjukkan kadar unsur hara tanah naik setelah dua musim memakai pupuk organik',n:['Pemerintah memberikan subsidi pupuk organik','Pupuk organik lebih ramah lingkungan daripada pupuk kimia','Tanah subur dapat menaikkan hasil panen hingga 40%']},
+ {k:'Pembangunan jalur sepeda dapat mengurangi polusi udara karena mendorong warga beralih dari motor ke sepeda. Oleh karena itu, semakin panjang jalur sepeda dibangun, semakin berkurang polusi udara kota.',l:'Rata-rata jarak rumah ke kantor warga 15–20 km sehingga warga tetap memilih motor dan jalur sepeda sepi pengguna',s:'Di kota yang jalur sepedanya diperpanjang, jumlah pengguna motor turun dan kualitas udara membaik',n:['Jalur sepeda tidak dilengkapi pohon peneduh','Warga mengeluh berkeringat saat tiba di kantor','Pedagang kaki lima kadang berjualan di jalur sepeda']},
+ {k:'Program makan gratis di sekolah dapat meningkatkan konsentrasi belajar karena siswa tidak lagi belajar dalam keadaan lapar. Oleh karena itu, semakin banyak sekolah menerapkan makan gratis, semakin tinggi prestasi siswa.',l:'Siswa berprestasi rendah ternyata sulit berkonsentrasi karena kurang tidur akibat bermain gawai hingga larut malam, bukan karena lapar',s:'Sekolah yang sudah menerapkan makan gratis mencatat kenaikan nilai rata-rata siswa pada semester berikutnya',n:['Menu makan gratis kadang tidak sesuai selera siswa','Distribusi makanan kadang terlambat','Beberapa sekolah belum memiliki ruang makan yang bersih']},
+ {k:'Kerja dari rumah (WFH) dapat menghemat pengeluaran perusahaan karena mengurangi biaya listrik dan sewa gedung. Oleh karena itu, semakin banyak karyawan WFH, semakin besar penghematan perusahaan.',l:'Biaya baru untuk tunjangan internet, listrik rumah, dan laptop karyawan WFH ternyata lebih besar dari penghematan sewa gedung',s:'Laporan keuangan menunjukkan total biaya operasional turun setelah separuh karyawan bekerja dari rumah',n:['Komunikasi antartim menjadi lebih lambat','Karyawan WFH kadang bekerja sambil rebahan','Beberapa karyawan rindu suasana kantor']},
+ {k:'Membaca buku 30 menit sebelum tidur dapat meningkatkan kualitas tidur karena menjauhkan mata dari layar HP. Oleh karena itu, semakin rutin seseorang membaca sebelum tidur, semakin nyenyak tidurnya.',l:'Penyebab utama susah tidur ternyata kecemasan dan stres pekerjaan, sehingga menjauh dari HP pun tetap tidak membuat tidur nyenyak',s:'Penelitian menunjukkan orang yang berhenti melihat layar sebelum tidur lebih cepat terlelap',n:['Membaca sambil tiduran membuat leher pegal','Buku sering terjatuh saat pembaca tertidur','Harga buku cetak semakin mahal']},
+ {k:'Pemasangan CCTV di jalan raya dapat mengurangi pelanggaran lalu lintas karena pengendara takut terekam. Oleh karena itu, semakin banyak CCTV dipasang, semakin sedikit pelanggaran lalu lintas.',l:'Sebagian besar CCTV yang terpasang tidak terhubung dengan sistem tilang sehingga pelanggar tidak pernah mendapat sanksi',s:'Setelah CCTV terhubung dengan sistem tilang elektronik, jumlah pelanggaran di ruas tersebut turun drastis',n:['Harga kamera CCTV semakin terjangkau','CCTV juga dapat merekam kejadian kriminal','Pemasangan CCTV memerlukan tiang listrik khusus']},
+ {k:'Menambah jam belajar tambahan di sore hari dapat meningkatkan kelulusan siswa karena materi dapat diulang lebih banyak. Oleh karena itu, semakin lama jam tambahan, semakin tinggi tingkat kelulusan.',l:'Siswa sudah kelelahan setelah sekolah seharian sehingga materi pada jam tambahan sore hampir tidak terserap',s:'Siswa yang mengikuti jam tambahan secara rutin memiliki nilai tryout lebih tinggi dibanding yang tidak',n:['Guru jam tambahan mendapat honor tambahan','Kantin sekolah tetap buka saat jam tambahan','Sebagian siswa dijemput orang tuanya setelah jam tambahan']},
+ {k:'Penanaman pohon di perkotaan dapat menurunkan suhu udara karena pohon memberikan keteduhan. Oleh karena itu, semakin banyak pohon ditanam, semakin sejuk udara kota.',l:'Sebagian besar bibit yang ditanam mati dalam beberapa bulan karena tidak dirawat, sehingga tidak pernah tumbuh menjadi peneduh',s:'Pengukuran menunjukkan suhu di kawasan bertaman lebih rendah 2–3 °C dibanding kawasan tanpa pohon',n:['Daun pohon yang gugur harus disapu setiap hari','Pohon membutuhkan penyiraman di musim kemarau','Beberapa pohon mengundang serangga']},
+ {k:'Penerapan sistem antrean daring di kantor pelayanan dapat mempercepat pelayanan karena warga tidak menumpuk di loket. Oleh karena itu, semakin luas sistem ini diterapkan, semakin cepat pelayanan publik.',l:'Petugas loket tetap memeriksa berkas secara manual satu per satu sehingga lama layanan tiap warga tidak berubah',s:'Kantor yang sudah memakai antrean daring mencatat waktu tunggu warga turun hingga separuhnya',n:['Sebagian warga lansia belum memiliki ponsel pintar','Aplikasi antrean memiliki tampilan berwarna biru','Pembuatan aplikasi antrean memakan waktu tiga bulan']},
+ {k:'Olahraga lari rutin dapat meningkatkan daya tahan jantung karena jantung terlatih memompa darah lebih efisien. Oleh karena itu, semakin sering seseorang berlari, semakin baik kebugarannya.',l:'Berlari setiap hari tanpa waktu istirahat justru menyebabkan cedera dan kelelahan sehingga latihan sering terhenti',s:'Peserta yang berlari tiga kali seminggu selama dua bulan menunjukkan denyut nadi istirahat yang lebih rendah',n:['Sepatu lari yang bagus harganya cukup mahal','Banyak orang memilih berlari di pagi hari','Lari dapat dilakukan bersama komunitas']},
+ {k:'Pemberian bantuan modal kepada UMKM dapat meningkatkan pendapatan pelaku usaha karena mereka dapat menambah produksi. Oleh karena itu, semakin besar bantuan modal, semakin tinggi pendapatan UMKM.',l:'Sebagian besar UMKM penerima bantuan kesulitan menjual produknya karena pasar sudah jenuh, sehingga tambahan produksi tidak terjual',s:'UMKM penerima bantuan modal tahun lalu mencatat kenaikan omzet rata-rata 30%',n:['Pengajuan bantuan modal memerlukan banyak berkas','UMKM menyerap banyak tenaga kerja lokal','Sebagian UMKM menjual produk secara daring']},
+ {k:'Pembatasan penggunaan gawai di sekolah dapat meningkatkan fokus siswa karena siswa tidak terganggu notifikasi. Oleh karena itu, semakin ketat pembatasan gawai, semakin baik hasil belajar siswa.',l:'Materi dan tugas sekolah justru diberikan melalui aplikasi di gawai sehingga pembatasan membuat siswa tertinggal materi',s:'Sekolah yang melarang gawai saat jam pelajaran mencatat peningkatan nilai ulangan harian',n:['Harga gawai semakin terjangkau','Sebagian orang tua ingin bisa menghubungi anaknya','Gawai sering digunakan untuk berfoto saat istirahat']},
+ {k:'Peningkatan jumlah halte bus dapat mengurangi kemacetan karena warga beralih ke transportasi umum. Oleh karena itu, semakin banyak halte dibangun, semakin lancar lalu lintas kota.',l:'Jumlah armada bus tidak bertambah sehingga waktu tunggu di halte tetap lama dan warga tetap memakai kendaraan pribadi',s:'Setelah halte dan rute bus ditambah, survei menunjukkan banyak pengendara motor beralih ke bus',n:['Desain halte baru lebih modern','Halte dilengkapi tempat duduk dan atap','Beberapa halte dipakai pedagang asongan']},
+ {k:'Pelatihan keterampilan bagi pencari kerja dapat menurunkan pengangguran karena peserta memiliki keahlian yang dibutuhkan industri. Oleh karena itu, semakin banyak pelatihan diadakan, semakin rendah angka pengangguran.',l:'Keterampilan yang diajarkan dalam pelatihan tidak sesuai dengan kebutuhan industri di daerah tersebut',s:'Sebagian besar lulusan pelatihan tahun lalu diterima bekerja dalam enam bulan',n:['Pelatihan diadakan di gedung balai desa','Peserta pelatihan mendapat sertifikat','Pelatihan berlangsung selama dua minggu']}
+];
+function genArgumen(){
+  const a=GP(ARG),lemah=Math.random()<.6;
+  const benar=lemah?a.l:a.s,salah=[...GS(a.n).slice(0,3),lemah?a.s:a.l];
+  return gMk('Argumen',`${a.k}\nManakah pernyataan berikut yang ${lemah?'MEMPERLEMAH':'MEMPERKUAT'} pernyataan di atas?`,benar,salah,
+    lemah?`Pelemah terkuat menyerang hubungan sebab-akibat dalam argumen (alasannya tidak terjadi atau ada penyebab lain). Pilihan lain hanya masalah sampingan yang tidak menyentuh inti argumen, atau malah memperkuat.`:
+    `Penguat terkuat memberi bukti bahwa sebab-akibat dalam argumen benar-benar terjadi. Pilihan lain tidak berhubungan langsung dengan inti argumen, atau malah memperlemah.`);
+}
+
+/* --- Penalaran analitis --- */
+function gPerm(a){if(a.length<=1)return [a];const r=[];a.forEach((x,i)=>gPerm(a.filter((_,j)=>j!==i)).forEach(p=>r.push([x,...p])));return r}
+const SIFAT=[['lebih cepat','lebih lambat','paling cepat','paling lambat','Empat anak berlomba lari'],['lebih tinggi','lebih pendek','paling tinggi','paling pendek','Beberapa siswa diukur tinggi badannya'],['lebih berat','lebih ringan','paling berat','paling ringan','Beberapa teman menimbang berat badan'],['lebih tua','lebih muda','paling tua','paling muda','Beberapa saudara sepupu dibandingkan umurnya'],['lebih banyak tabungannya','lebih sedikit tabungannya','paling banyak tabungannya','paling sedikit tabungannya','Beberapa siswa membandingkan tabungan']];
+function genAnalitis(){
+  const t=GLV===1?GP([0,2]):GP([0,0,1,2,3]);
+  if(t===0){ // urutan perbandingan
+    const n=GLV===1?4:GLV===2?GP([4,5]):GP([5,6]),nm=gNama(n),S=GP(SIFAT),urut=GS(nm); // urut[0] = paling "lebih"
+    const rk=x=>urut.indexOf(x),P=gPerm(nm),cl=[];let sol=P;
+    let tries=0;
+    while(sol.length>1&&tries++<80){const [a,b]=GS(nm).slice(0,2);const lebih=rk(a)<rk(b);
+      const ns=sol.filter(p=>(p.indexOf(a)<p.indexOf(b))===lebih);if(ns.length===sol.length)continue;sol=ns;cl.push(Math.random()<.5?`${a} ${lebih?S[0]:S[1]} daripada ${b}.`:`${b} ${lebih?S[1]:S[0]} daripada ${a}.`)}
+    if(sol.length!==1)return null;
+    const intro=S[4].replace('Empat',n===4?'Empat':n===5?'Lima':'Enam')+`: ${nm.join(', ')}.\n`+cl.map(c=>'• '+c).join('\n');
+    const mode=GP([0,1,2]);
+    if(mode===0){const tanya=Math.random()<.5;const ans=tanya?urut[0]:urut[n-1];
+      return gMk('Penalaran analitis',intro+`\nSiapa yang ${tanya?S[2]:S[3]}?`,ans,GS(nm.filter(x=>x!==ans)).slice(0,3).concat(['Tidak dapat ditentukan']),`Susun dari petunjuk: ${urut.join(' – ')} (dari yang ${S[2]}). Jadi ${ans}.`)}
+    if(mode===1){const k=GR(2,n-1),ans=urut[k-1];
+      return gMk('Penalaran analitis',intro+`\nJika diurutkan dari yang ${S[2]}, siapa yang berada di urutan ke-${k}?`,ans,GS(nm.filter(x=>x!==ans)).slice(0,3).concat(['Tidak dapat ditentukan']),`Urutan dari yang ${S[2]}: ${urut.join(' – ')}. Urutan ke-${k} adalah ${ans}.`)}
+    const benar=urut.join(' – '),w=new Set();let tt=0;while(w.size<4&&tt++<100){const p=[...urut];const i=GR(0,n-2);[p[i],p[i+1]]=[p[i+1],p[i]];if(Math.random()<.4){const j=GR(0,n-2);[p[j],p[j+1]]=[p[j+1],p[j]]}const s=p.join(' – ');if(s!==benar)w.add(s)}
+    return gMk('Penalaran analitis',intro+`\nUrutan dari yang ${S[2]} sampai yang ${S[3]} adalah ...`,benar,[...w],`Gabungkan petunjuk satu per satu sampai urutannya pasti: ${benar}.`);
+  }
+  if(t===1){ // duduk berderet
+    const n=5,nm=gNama(n),ar=GS(nm),P=gPerm(nm),pos=(p,x)=>p.indexOf(x);let sol=P;const cl=[];
+    const C=[ // pembuat petunjuk dari susunan sebenarnya
+      ()=>{const x=GP([ar[0],ar[n-1]]);return [`${x} duduk di salah satu ujung.`,p=>pos(p,x)===0||pos(p,x)===n-1]},
+      ()=>{const i=GR(1,n-2),x=ar[i],a=ar[i-1],b=ar[i+1];return [`${x} duduk tepat di antara ${a} dan ${b}.`,p=>Math.abs(pos(p,a)-pos(p,b))===2&&pos(p,x)===(pos(p,a)+pos(p,b))/2]},
+      ()=>{const [a,b]=GS(nm).slice(0,2);if(Math.abs(pos(ar,a)-pos(ar,b))===1)return null;return [`${a} tidak duduk bersebelahan dengan ${b}.`,p=>Math.abs(pos(p,a)-pos(p,b))!==1]},
+      ()=>{const i=GR(0,n-2),a=ar[i],b=ar[i+1];return [`${a} duduk tepat di sebelah kiri ${b}.`,p=>pos(p,b)-pos(p,a)===1]},
+      ()=>{const i=GR(0,n-1);return [`${ar[i]} duduk di kursi nomor ${i+1} dari kiri.`,p=>pos(p,ar[i])===i]}
+    ];
+    let tries=0;while(sol.length>1&&tries++<100){const g=C[GP(GLV===3?[0,1,1,2,2,3]:[0,1,2,3,3,4])]();if(!g)continue;const ns=sol.filter(g[1]);if(ns.length===sol.length||!ns.length)continue;sol=ns;cl.push(g[0])}
+    if(sol.length!==1||cl.length<3)return null;
+    const k=GR(1,n),ans=ar[k-1];
+    return gMk('Penalaran analitis',`Lima orang, yaitu ${nm.join(', ')}, duduk di lima kursi berderet (kursi 1 paling kiri). Aturannya:\n`+cl.map(c=>'• '+c).join('\n')+`\nSiapa yang duduk di kursi nomor ${k}?`,ans,GS(nm.filter(x=>x!==ans)).slice(0,4),`Coba susunan yang memenuhi semua aturan. Hanya ada satu: ${ar.join(' – ')}. Kursi nomor ${k} ditempati ${ans}.`);
+  }
+  if(t===2){ // atribut
+    const n=GLV===1?5:GP([5,6]),nm=gNama(n),AT=GS([['memakai kemeja','memakai kaos'],['memakai celana hitam','memakai celana biru'],['memakai sepatu putih','memakai sepatu hitam'],['memakai kacamata','tidak memakai kacamata'],['membawa tas hitam','membawa tas cokelat'],['memakai topi','tidak memakai topi'],['membawa botol minum','tidak membawa botol minum']]).slice(0,GLV===1?3:GLV===2?4:5);
+    let v,ok=false,t2=0;while(!ok&&t2++<50){v=nm.map(()=>AT.map(()=>Math.random()<.5));const ks=v.map(x=>x.join());ok=new Set(ks).size===n&&AT.every((_,j)=>v.some(x=>x[j])&&v.some(x=>!x[j]))}
+    if(!ok)return null;
+    const ds=AT.map((a,j)=>{const ya=nm.filter((_,i)=>v[i][j]);return `${ya.length>1?ya.slice(0,-1).join(', ')+' dan '+ya[ya.length-1]:ya[0]} ${a[0]}, sedangkan yang lain ${a[1]}.`});
+    const ti=GR(0,n-1),ans=nm[ti],ciri=AT.map((a,j)=>v[ti][j]?a[0]:a[1]);
+    return gMk('Penalaran analitis',`${n===5?'Lima':'Enam'} peserta, yaitu ${nm.join(', ')}, mengikuti kegiatan. `+ds.join(' ')+`\nSiapakah peserta yang ${ciri.slice(0,-1).join(', ')}, dan ${ciri[ciri.length-1]}?`,ans,GS(nm.filter(x=>x!==ans)).slice(0,4),`Cek ciri satu per satu. Hanya ${ans} yang memenuhi semuanya: ${ciri.join(', ')}.`);
+  }
+  // rute: hitung jumlah jalan
+  const KOTA=GS(['Surabaya','Malang','Kediri','Madiun','Blitar','Jember','Tuban','Lamongan','Gresik','Pasuruan','Probolinggo','Ngawi','Nganjuk','Jombang','Mojokerto']);
+  const tuj=KOTA[0],wajib=KOTA[1],awal=KOTA.slice(2,2+GR(1,2)),antar=KOTA.slice(4,4+GR(1,2));
+  // dari asal ke wajib lewat awal; dari wajib ke tujuan langsung atau lewat antar
+  const e={asal:[wajib,...awal]};awal.forEach((a,i)=>{e[a]=[wajib];if(i+1<awal.length&&Math.random()<.6)e[a].push(awal[i+1])});
+  e[wajib]=[tuj,...antar];antar.forEach((a,i)=>{e[a]=[tuj];if(i+1<antar.length&&Math.random()<.5)e[a].push(antar[i+1])});
+  if(antar.length&&Math.random()<.5){const x=GP(antar);e[x]=e[x].filter(y=>y!==tuj);const z=KOTA[7];e[x].push(z);e[z]=[tuj]}
+  const memo={},cnt=x=>x===tuj?1:memo[x]!=null?memo[x]:(memo[x]=(e[x]||[]).reduce((s,y)=>s+cnt(y),0));
+  const ans=cnt('asal');if(ans<2)return null;
+  const ds=Object.entries(e).map(([k,v])=>`dari ${k==='asal'?'tempat asalnya':k} ia bisa menuju ${v.length>1?v.slice(0,-1).join(', ')+' atau '+v[v.length-1]:v[0]}`).join('; ');
+  const nm=GP(NAMA_L);
+  return gMkUrut('Penalaran analitis',`${nm} akan pergi ke ${tuj} dan wajib mampir ke ${wajib}. Ketentuannya: ${ds}. Ada berapa rute berbeda yang dapat ditempuh ${nm} untuk sampai ke ${tuj}?`,ans,gNear(ans,1),
+    `Hitung jumlah jalan dari belakang: setiap kota mendapat jumlah rute ke ${tuj} sama dengan jumlah rute kota-kota tujuannya. Rute asal → ${wajib} dikali rute ${wajib} → ${tuj}. Totalnya ${ans} rute.`);
+}
+
+/* --- Taksiran --- */
+function genTaksiran(){
+  for(let t=0;t<50;t++){
+    const c=GP([8,9,11,18,19,20,21,22,23,28,29,30,31,32,34,36]),k=GP([1,2,3,0.5,1.5]),b=Math.max(2,Math.round(c*k)+GR(-2,2)),a=GR(14,80)*10+GR(-9,9);
+    const bentuk=GR(0,2),v=a*b/c;let q;
+    if(bentuk===0)q=`${gN(a)} × ${b} : ${c}`;else if(bentuk===1)q=`${gN(a)} : ${c} × ${b}`;else q=`(${gN(a)} × ${b}) : ${c}`;
+    const s=v<300?25:v<1500?50:100,ans=Math.round(v/s)*s;if(Math.abs(v-ans)>s*.3||ans<=s*2)continue;
+    const off=GP([[-2,-1,1,2],[-1,1,2,3],[-3,-2,-1,1],[-4,-2,2,4]]),w=off.map(o=>ans+o*s*(Math.abs(o)>2?1:1)).filter(x=>x>0);if(w.length<4)continue;
+    return gMkUrut('Taksiran',`Nilai yang paling mendekati hasil dari ${q} adalah ...`,ans,w,`Bulatkan dulu: ${gN(a)} ≈ ${gN(Math.round(a/10)*10)}, dan ${b} : ${c} ≈ ${gN(+(b/c).toFixed(2))}. Hasil sebenarnya ≈ ${gN(+v.toFixed(1))}, paling dekat dengan ${gN(ans)}.`);
+  }
+  return null;
+}
+
+/* --- Hitung cepat model FR --- */
+function genHitungCepat(){
+  const t=GLV===1?GP([0,1]):GR(0,4);
+  if(t===0)return GEN_LAMA_HC();
+  if(t===1){ // pembagian setara
+    const q=GR(3,60)*GP([5,10,20,25]),d=GP([12,15,16,18,20,24,25,28,30,32,36,40]),N=q*d;
+    const w=new Set();let tt=0;while(w.size<4&&tt++<200){const d2=GP([12,14,15,16,18,20,21,24,25,27,28,30,32,35,36,40,45,48]);const m=(q+GP([-3,-2,-1,1,2,3])*GP([1,5]))*d2;if(m>0&&m!==N)w.add(`${gN(m)} ÷ ${d2}`)}
+    const d3=GP([12,14,15,16,18,20,21,24,25,27,28,30,32,35,36,40,45,48].filter(x=>x!==d));
+    return gMk('Hitung cepat',`Bilangan yang memiliki hasil pembagian sama dengan ${gN(N)} ÷ ${d} adalah ...`,`${gN(q*d3)} ÷ ${d3}`,[...w],`${gN(N)} ÷ ${d} = ${gN(q)}. Cari pilihan yang hasilnya juga ${gN(q)}: ${gN(q*d3)} ÷ ${d3} = ${gN(q)}.`);
+  }
+  if(t===2){ // pasangan perkalian sama
+    const mk=()=>{const x=GR(12,36),y=GR(12,48),p=x*y,f=[];for(let a=11;a<100;a++)if(p%a===0){const b=p/a;if(b>=11&&b<100&&a!==x&&a!==y)f.push([a,b])}return f.length?[x,y,...GP(f)]:null};
+    const T=mk();if(!T)return null;const benar=`${T[0]} × ${T[1]} sama dengan ${T[2]} × ${T[3]}`,w=new Set();let tt=0;
+    while(w.size<4&&tt++<100){const x=GR(12,36),y=GR(12,48),a=x+GP([-2,-1,1,2,3]),b=Math.round(x*y/a)+GP([-1,1,2]);if(x*y!==a*b&&a>10&&b>10)w.add(`${x} × ${y} sama dengan ${a} × ${b}`)}
+    return gMk('Hitung cepat','Manakah pasangan perkalian berikut yang menghasilkan nilai yang sama?',benar,[...w],`${T[0]} × ${T[1]} = ${gN(T[0]*T[1])} dan ${T[2]} × ${T[3]} = ${gN(T[2]*T[3])}. Trik: uraikan ke faktor prima lalu bandingkan.`);
+  }
+  if(t===3){ // cerita baki/kardus
+    const it=GP([['telur','baki','peternakan'],['buku','kardus','gudang'],['bibit','polibag','kebun'],['beras','karung','koperasi'],['masker','kotak','apotek']]);
+    const q=GR(2,9)*GP([5,10]),a=GP([15,20,24,25,30,40]),b=GP([12,18,20,24,30,36,45].filter(x=>x!==a)),A=q*a,B=q*b;
+    const benar=`${gN(A)} ÷ ${a} sama dengan ${gN(B)} ÷ ${b}`,w=new Set();let tt=0;
+    while(w.size<4&&tt++<100){const a2=a+GP([-5,5,10]),b2=b+GP([-6,6,-3,3]);if(a2>0&&b2>0&&A/a2!==B/b2)w.add(`${gN(A)} ÷ ${a2} sama dengan ${gN(B)} ÷ ${b2}`)}
+    return gMk('Hitung cepat',`Sebuah ${it[2]} memiliki ${it[0]} yang akan dimasukkan ke dalam ${it[1]} dengan jumlah yang sama. Kombinasi yang menghasilkan jumlah ${it[0]} per ${it[1]} sama adalah ...`,benar,[...w],`${gN(A)} ÷ ${a} = ${q} dan ${gN(B)} ÷ ${b} = ${q}. Keduanya sama.`);
+  }
+  // perkalian besar setara
+  const a=GR(2,9)*GP([10,50,100]),b=GR(2,30)*GP([10,50,100]),p=a*b,f=[];
+  [2,3,4,5,6,8,10,12,15,20,25].forEach(k=>{if(a%k===0)f.push([a/k,b*k]);if(b%k===0)f.push([a*k,b/k])});
+  const ok=f.filter(([x,y])=>x!==a&&x!==b&&Number.isInteger(x)&&Number.isInteger(y));if(!ok.length)return null;const [c,d]=GP(ok);
+  const w=new Set();let tt=0;while(w.size<4&&tt++<100){const x=c+GP([-1,1])*GP([10,20,50,100]),y=Math.round(p/x/10)*10+GP([-10,10,20]);if(x>0&&y>0&&x*y!==p)w.add(`${gN(x)} × ${gN(y)}`)}
+  return gMk('Hitung cepat',`Perkalian yang mempunyai nilai sama dengan ${gN(a)} × ${gN(b)} adalah ...`,`${gN(c)} × ${gN(d)}`,[...w],`${gN(a)} × ${gN(b)} = ${gN(p)}. Bagi satu faktor dan kalikan faktor lain dengan angka yang sama: ${gN(c)} × ${gN(d)} = ${gN(p)}.`);
+}
+
+/* --- Deret bentuk kotak --- */
+const F_KOTAK=[['dikali 4',x=>x*4],['dikali 3',x=>x*3],['dikali 6',x=>x*6],['dikali 8',x=>x*8],['dikuadratkan',x=>x*x],['dipangkatkan tiga',x=>x**3],['dikuadratkan lalu dikurangi 1',x=>x*x-1],['dikali bilangan setelahnya',x=>x*(x+1)],['ditambah 7',x=>x+7],['dikali 2 lalu ditambah 3',x=>2*x+3]];
+function genDeretKotak(){
+  const t=GLV===1?GP([0,2]):GR(0,3),V=gLet(),f=GLV===1?GP(F_KOTAK.slice(0,5).concat([F_KOTAK[8]])):GP(F_KOTAK);
+  const row=a=>a.map(String).join('    ');
+  if(t===0){ // 2x2 sederhana: atas x, bawah f(x)
+    const a=GR(2,9),b=GR(3,12);if(a===b)return null;const g=[[a,b],[f[1](a),f[1](b)]];const r=GR(0,1),c=GR(0,1),ans=g[r][c];
+    if(f[1](a)>2000||f[1](b)>2000)return null;
+    const s=g.map((x,i)=>row(x.map((v,j)=>i===r&&j===c?V:v))).join('\n');
+    return gMkUrut('Deret kotak',`${s}\nNilai ${V} yang tepat adalah ...`,ans,gNear(ans,Math.max(1,Math.round(ans/8))),`Pola tiap kolom: angka atas ${f[0]} menjadi angka bawah. Jadi ${V} = ${gN(ans)}.`);
+  }
+  if(t===1){ // contoh + kotak soal, bisa silang
+    const sil=Math.random()<.5,mk=(a,b)=>sil?[[a,b],[f[1](b),f[1](a)]]:[[a,b],[f[1](a),f[1](b)]];
+    const a=GR(2,9),b=GR(2,9),c=GR(2,12),d=GR(2,12);if(a===b||c===d)return null;const E=mk(a,b),K=mk(c,d);if(Math.max(...K[1],...E[1])>2500)return null;
+    const r=GR(0,1),cc=GR(0,1),ans=K[r][cc];
+    const s='Diketahui:\n'+E.map(row).join('\n')+'\nKotak soal:\n'+K.map((x,i)=>row(x.map((v,j)=>i===r&&j===cc?V:v))).join('\n');
+    return gMkUrut('Deret kotak',`${s}\nNilai ${V} yang tepat adalah ...`,ans,gNear(ans,Math.max(1,Math.round(ans/8))),`Pada contoh, angka atas ${f[0]} lalu ditulis ${sil?'menyilang (diagonal)':'tepat di bawahnya'}. Terapkan pola yang sama pada kotak soal: ${V} = ${gN(ans)}.`);
+  }
+  if(t===2){ // baris pasangan x | f(x)
+    const n=GP([3,4]),st=GR(2,9),stp=GP([1,2]),xs=[...Array(n)].map((_,i)=>st+i*stp),g=xs.map(x=>[x,f[1](x)]);if(g.some(x=>x[1]>3000))return null;
+    const r=GR(0,n-1),c=GR(0,1),ans=g[r][c];
+    const s=g.map((x,i)=>row(x.map((v,j)=>i===r&&j===c?V:v))).join('\n');
+    return gMkUrut('Deret kotak',`${s}\nNilai ${V} yang tepat adalah ...`,ans,gNear(ans,Math.max(1,Math.round(ans/10))),`Tiap baris: angka kiri ${f[0]} menjadi angka kanan. Angka kiri juga naik ${stp} tiap baris. Jadi ${V} = ${gN(ans)}.`);
+  }
+  // deret dalam kotak dibaca kiri-kanan, atas-bawah
+  const k=GP([[2,3],[3,2],[2,4],[3,3],[2,5],[3,4],[2,6],[2,7]]),n=k[0]*k[1],tp=GR(0,3);let s=[],why;
+  if(tp===0){let a=GR(1,9),d=GR(2,5),c=GR(0,2);let x=a;for(let i=0;i<n;i++){s.push(x);x+=d;d+=c}why=c?`Selisihnya bertambah ${c} setiap langkah.`:`Setiap angka ditambah ${d}.`}
+  else if(tp===1){let a=GR(1,4),b=GR(2,6);s=[a,b];while(s.length<n)s.push(s[s.length-1]+s[s.length-2]);why='Setiap angka adalah jumlah dua angka sebelumnya.'}
+  else if(tp===2){const a=GR(5,30),d1=GR(2,5),b=GR(1,9),d2=GR(2,6);for(let i=0;i<n;i++)s.push(i%2===0?a+d1*(i/2):b+d2*((i-1)/2));why=`Ada dua deret berselang-seling: kotak ganjil naik ${d1}, kotak genap naik ${d2}.`}
+  else{const st=GR(1,4);for(let i=0;i<n;i++)s.push((st+i)**2);why='Angkanya bilangan kuadrat berurutan.'}
+  if(s.some(x=>x>5000))return null;const hi=GR(Math.floor(n/2),n-1),ans=s[hi];
+  const g=[];for(let i=0;i<k[0];i++)g.push(row(s.slice(i*k[1],(i+1)*k[1]).map((v,j)=>i*k[1]+j===hi?V:v)));
+  return gMkUrut('Deret kotak',`${g.join('\n')}\nNilai ${V} yang tepat adalah ...`,ans,gNear(ans,Math.max(1,Math.round(ans/10))),`Baca dari kiri ke kanan, baris atas ke bawah. ${why} Jadi ${V} = ${gN(ans)}.`);
+}
+
+/* --- Kecukupan data --- */
+const KD_OPS=['Pernyataan (1) SAJA cukup untuk menjawab pertanyaan, tetapi pernyataan (2) SAJA tidak cukup.','Pernyataan (2) SAJA cukup untuk menjawab pertanyaan, tetapi pernyataan (1) SAJA tidak cukup.','Dua pernyataan BERSAMA-SAMA cukup untuk menjawab pertanyaan, tetapi SATU pernyataan SAJA tidak cukup.','Salah satu pernyataan SAJA cukup untuk menjawab pertanyaan.','Pernyataan (1) dan pernyataan (2) tidak cukup untuk menjawab pertanyaan.'];
+function genKecukupan(){
+  const x=GR(2,15),y=GR(2,15),t=GLV===1?GP([0,1,3]):GR(0,8);let q,s1,s2,ans,pemb;const tukar=Math.random()<.5;
+  if(t===0){const k=GR(2,6);q='Berapakah nilai x?';s1=`${k}x = ${k*x}`;s2=`x + y = ${x+y}`;ans=0;pemb=`Dari ${s1}, x = ${x}. Pernyataan "x + y = ${x+y}" masih punya dua variabel, jadi tidak cukup.`}
+  else if(t===1){q='Berapakah nilai x?';s1=`x + y = ${x+y}`;s2=`x − y = ${gN(x-y)}`;ans=2;pemb=`Masing-masing punya dua variabel, tidak cukup sendiri. Jika digabung (eliminasi), x = ${x}.`}
+  else if(t===2){const k=GR(2,5);q='Berapakah nilai x?';s1=`x + y = ${x+y}`;s2=`${k}x + ${k}y = ${k*(x+y)}`;ans=4;pemb=`Pernyataan (2) hanyalah (1) dikali ${k}, jadi tidak memberi informasi baru. Keduanya tetap tidak cukup.`}
+  else if(t===3){const k=GR(2,6),c=GR(1,9);q='Berapakah nilai x?';s1=`${k}x = ${k*x}`;s2=`x + ${c} = ${x+c}`;ans=3;pemb=`Dari (1), x = ${x}. Dari (2) juga x = ${x}. Masing-masing cukup sendiri.`}
+  else if(t===4){const p=GR(5,20),l=GR(2,p-1);q='Berapakah luas sebuah persegi panjang?';s1=`Panjang persegi panjang adalah ${p} cm.`;s2=`Lebar persegi panjang adalah ${l} cm.`;ans=2;pemb=`Luas = panjang × lebar. Butuh keduanya: ${p} × ${l} = ${p*l} cm².`}
+  else if(t===5){q='Berapakah nilai rata-rata dari tiga bilangan a, b, dan c?';s1=`a + b + c = ${3*x}`;s2=`a = ${y}`;ans=0;pemb=`Rata-rata = jumlah : 3. Dari (1), rata-rata = ${3*x} : 3 = ${x}. Pernyataan (2) tidak cukup.`}
+  else if(t===6){q='Apakah bilangan bulat n merupakan bilangan genap?';s1='n habis dibagi 4.';s2='n + 2 merupakan bilangan genap.';ans=3;pemb='Dari (1), n kelipatan 4 pasti genap. Dari (2), n + 2 genap berarti n juga genap. Masing-masing cukup.'}
+  else if(t===7){const h1=GR(2,9)*1000,h2=GR(3,12)*1000,a=GR(2,4),b=GR(1,3);q='Berapakah harga satu buah pensil?';s1=`Harga ${a} pensil dan ${b} buku adalah ${gRp(a*h1+b*h2)}.`;s2=`Harga satu buku adalah ${gRp(h2)}.`;ans=2;pemb=`(1) saja punya dua harga yang belum diketahui. Digabung dengan (2): ${a} pensil = ${gRp(a*h1+b*h2)} − ${gRp(b*h2)}, jadi 1 pensil = ${gRp(h1)}.`}
+  else{const k=GR(2,4),b=GR(5,15);q='Berapakah umur Ayah sekarang?';s1=`Umur Ayah ${k} kali umur Beni.`;s2=`Jumlah umur Ayah dan Beni adalah ${(k+1)*b} tahun.`;ans=2;pemb=`Gabungkan: ${k}B + B = ${(k+1)*b}, jadi B = ${b} dan umur Ayah ${k*b} tahun. Masing-masing saja tidak cukup.`}
+  if(tukar&&ans<2){[s1,s2]=[s2,s1];ans=1-ans}else if(tukar)[s1,s2]=[s2,s1];
+  return gMkTetap('Kecukupan data',`${q}\n(1) ${s1}\n(2) ${s2}`,KD_OPS,ans,pemb);
+}
+
+/* --- Pecahan & desimal --- */
+const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+const frs=(n,d)=>{const g=gcd(n,d);n/=g;d/=g;if(d<0){n=-n;d=-d}return d===1?String(n):`${n}/${d}`};
+function genPecahan(){
+  const t=GLV===1?GP([0,2]):GR(0,4);
+  if(t===0){const b=GP([2,3,4,5,6,8]),d=GP([3,4,5,6,8,10,12].filter(x=>x!==b)),a=GR(1,b-1),c=GR(1,d-1),n=a*d+c*b,dd=b*d;
+    const benar=frs(n,dd),w=new Set([frs(a+c,b+d),frs(n+dd/gcd(n,dd),dd),frs(a*c,b*d),frs(n-1>0?n-1:n+1,dd),frs(a*d,dd)].filter(x=>x!==benar));if(w.size<4)return null;
+    return gMk('Pecahan & desimal',`Hasil dari ${a}/${b} + ${c}/${d} adalah ...`,benar,[...w].slice(0,4),`Samakan penyebut: ${a}/${b} + ${c}/${d} = ${a*d}/${dd} + ${c*b}/${dd} = ${n}/${dd} = ${benar}.`)}
+  if(t===1){const dec=GP([0.25,0.5,0.75,0.2,0.4,0.6,0.8,0.125]),f=GP([[2,5],[3,4],[4,5],[1,2],[3,8],[5,6]]),N=GR(2,12)*40;const v=dec*f[0]/f[1]*N;if(!Number.isInteger(v))return null;
+    return gMkUrut('Pecahan & desimal',`Nilai dari ${gN(dec)} × ${f[0]}/${f[1]} × ${N} adalah ...`,v,gNear(v,Math.max(1,Math.round(v/6))),`Ubah desimal ke pecahan: ${gN(dec)} = ${frs(dec*1000,1000)}. Lalu ${frs(dec*1000,1000)} × ${f[0]}/${f[1]} × ${N} = ${gN(v)}.`)}
+  if(t===2){const p=GP([10,15,20,25,30,40,50,75]),f=GP([[1,2],[1,4],[3,4],[2,5],[3,5],[1,3],[2,3]]),N=GR(1,10)*60;const v=p/100*f[0]/f[1]*N;if(!Number.isInteger(v)||v===0)return null;
+    return gMkUrut('Pecahan & desimal',`${p}% dari ${f[0]}/${f[1]} × ${N} adalah ...`,v,gNear(v,Math.max(1,Math.round(v/5))),`${f[0]}/${f[1]} × ${N} = ${gN(f[0]*N/f[1])}. Lalu ${p}% × ${gN(f[0]*N/f[1])} = ${gN(v)}.`)}
+  if(t===3){ // bandingkan bentuk berbeda
+    const pool=[[3,8],[2,5],[3,5],[5,8],[4,7],[5,9],[7,10],[2,3],[5,6],[3,4],[7,12],[9,20]],sel=GS(pool).slice(0,5),val=sel.map(f=>f[0]/f[1]);if(new Set(val.map(v=>v.toFixed(4))).size<5)return null;
+    const besar=Math.random()<.5,idx=val.indexOf(besar?Math.max(...val):Math.min(...val));
+    const show=sel.map((f,i)=>{const v=f[0]/f[1],r=GR(0,2);if(r===1&&Number.isInteger(v*1000))return gN(+v.toFixed(3));if(r===2&&Number.isInteger(v*1000))return gN(+(v*100).toFixed(1))+'%';return `${f[0]}/${f[1]}`});
+    const o=show.map((s,i)=>s),ans=o[idx];
+    return gMk('Pecahan & desimal',`Bilangan ${besar?'terbesar':'terkecil'} di antara bilangan berikut adalah ...`,ans,o.filter((_,i)=>i!==idx),`Ubah semua ke desimal: ${sel.map((f,i)=>`${show[i]} = ${gN(+(f[0]/f[1]).toFixed(3))}`).join('; ')}. Yang ${besar?'terbesar':'terkecil'} adalah ${ans}.`);
+  }
+  const a=GR(11,99)/10,b=GR(11,49)/10,c=GP([0.5,0.25,0.2,1.5,2.5]),v=+((a+b)*c).toFixed(3);if(!Number.isInteger(v*100))return null;
+  return gMk('Pecahan & desimal',`Hasil dari (${gN(a)} + ${gN(b)}) × ${gN(c)} adalah ...`,gN(v),[gN(+(a+b*c).toFixed(3)),gN(+(v+0.5).toFixed(3)),gN(+(v-0.25).toFixed(3)),gN(+(v*10).toFixed(3))].filter(x=>x!==gN(v)),`Kerjakan dalam kurung dulu: ${gN(a)} + ${gN(b)} = ${gN(+(a+b).toFixed(2))}. Lalu × ${gN(c)} = ${gN(v)}.`);
+}
+
+const GEN_LAMA_HC=GEN['Hitung cepat'];
+Object.assign(GEN,{'Silogisme':genSilogisme,'Analogi kata':genAnalogiKata,'Argumen':genArgumen,'Penalaran analitis':genAnalitis,'Taksiran':genTaksiran,'Hitung cepat':genHitungCepat,'Deret kotak':genDeretKotak,'Kecukupan data':genKecukupan,'Pecahan & desimal':genPecahan});
+
 const GEN_JENIS=Object.keys(GEN);
 // tingkat otomatis per materi: naik kalau sering benar, turun kalau sering salah
 function levelTIU(topik){
@@ -1916,7 +2242,7 @@ function tutup(){stopT();if(window.speechSynthesis)speechSynthesis.cancel();$('g
 
 /* ---------- SKD dan bank soal ---------- */
 const TOPIK={TWK:['Pancasila','UUD 1945','NKRI','Bhinneka Tunggal Ika','Nasionalisme','Integritas','Bela negara','Pilar negara','Bahasa Indonesia','Sejarah'],
-  TIU:['Analogi','Silogisme','Analitis','Deret angka','Hitungan','Perbandingan','Soal cerita','Figural','Sinonim dan antonim'],
+  TIU:Object.keys(GEN).concat(['Figural']),
   TKP:['Pelayanan publik','Jejaring kerja','Sosial budaya','Teknologi informasi','Profesionalisme','Anti radikalisme']};
 const K5=i=>[0,1,2,3,4].map(j=>j===i?5:0);
 const CONTOH=[
@@ -1935,7 +2261,7 @@ const CONTOH=[
  {ref:'c13',subtes:'TKP',topik:'Anti radikalisme',pertanyaan:'Di grup percakapan, seorang teman membagikan ajakan yang menyebarkan kebencian terhadap kelompok lain. Sikap Anda ...',pilihan:['Ikut menyebarkan karena banyak yang setuju','Diam saja','Keluar dari grup','Mengingatkan dengan baik dan tidak ikut menyebarkan','Mengingatkan dengan baik, tidak ikut menyebarkan, dan melaporkan ke admin atau pihak berwenang bila berbahaya'],nilai:[1,2,3,4,5],pembahasan:'Nilai tertinggi untuk sikap aktif mencegah penyebaran kebencian dengan cara yang benar.'},
  {ref:'c14',subtes:'TKP',topik:'Profesionalisme',pertanyaan:'Atasan memberi tugas mendadak saat pekerjaan Anda sendiri hampir tenggat. Anda ...',pilihan:['Meminta rekan mengerjakan tugas dari atasan','Menolak tugas tersebut','Menyampaikan tenggat pekerjaan Anda, menyusun prioritas bersama atasan, lalu menyelesaikan keduanya','Mengerjakan tugas baru dan menunda pekerjaan sendiri tanpa memberi tahu','Mengerjakan keduanya sampai lembur tanpa koordinasi'],nilai:[3,1,5,2,4],pembahasan:'Nilai tertinggi untuk komunikasi, penentuan prioritas, dan tanggung jawab.'}
 ];
-function allSoal(){return CONTOH.concat(BAWAAN,D.soal.map(s=>({ref:'db:'+s.id,id:s.id,subtes:s.subtes,topik:s.topik||'Lainnya',pertanyaan:s.pertanyaan,pilihan:s.pilihan,nilai:(s.nilai||[]).map(Number),pembahasan:s.pembahasan||''})))}
+function allSoal(){return CONTOH.filter(s=>s.subtes!=='TIU').concat(BAWAAN,D.soal.map(s=>({ref:'db:'+s.id,id:s.id,subtes:s.subtes,topik:s.topik||'Lainnya',pertanyaan:s.pertanyaan,pilihan:s.pilihan,nilai:(s.nilai||[]).map(Number),pembahasan:s.pembahasan||''})))}
 const benarJ=j=>j.subtes==='TKP'?j.skor>=4:j.skor>=5;
 function salahRefs(){const m={};D.jawaban.forEach(j=>m[j.soal_ref]=j);return new Set(Object.values(m).filter(j=>!benarJ(j)).map(j=>j.soal_ref))}
 function statTopik(){
