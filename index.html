@@ -95,7 +95,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);bo
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .msg{font-size:13px;color:var(--mut)}
 .cb{margin-top:12px;padding:12px 14px;border-radius:12px;background:#FFECEC;border-left:4px solid var(--dn);font-size:14px;line-height:1.5}
-.cb.ok{background:#E8F8F0;border-color:var(--up)}.cb.info{background:var(--ice);border-color:var(--blue)}
+.cb.ok{background:#E8F8F0;border-color:var(--up)}.cb.bahaya{background:#FDECEC;border:2px solid #E5484D;border-left-width:6px;color:#7A1A1E}.cb.bahaya .row{margin-top:8px}.cb.info{background:var(--ice);border-color:var(--blue)}
 .m{display:flex;gap:12px;align-items:center;padding:13px;border:1.5px solid var(--line);border-radius:14px;margin-top:10px;cursor:pointer;transition:.25s;background:#fff}
 .m:hover{border-color:var(--blue)}.m p{margin:0;flex:1;font-size:14px;line-height:1.5}.m b{color:var(--blue);font-size:13px;white-space:nowrap}
 .m small{display:block;color:var(--mut);font-size:12px}
@@ -656,6 +656,13 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
       <div class="row"><button class="btn" onclick="buatAkunDariTamu()">Buat akun gratis</button></div></section>
     <section class="card belum-pasang"><h2>📲 Pasang di HP</h2><p class="sub">Tambahkan RunUp ke layar utama supaya bisa dibuka seperti aplikasi biasa.</p>
       <div class="row"><button class="btn" onclick="pasangApp()">Pasang RunUp</button></div></section>
+    <section class="card"><h2>🏔️ Bromo dan target lari</h2><p class="sub">Progres 4 minggu otomatis digeser supaya Minggu 4 jatuh tepat sebelum minggu acara.</p>
+      <div class="form">
+        <div><label>Tanggal acara<input type="date" id="lbTg"></label></div>
+        <div><label>Nama acara<input id="lbNm" placeholder="Fun run Bromo 35K"></label></div>
+        <div><label>Target akhir 5 km (menit)<input type="number" step="0.5" id="t5k" placeholder="20"></label></div>
+      </div><div id="lbInfo"></div>
+      <div class="row"><button class="btn" onclick="simpanLomba()">Simpan</button><span class="msg" id="mlb"></span></div></section>
     <section class="card"><h2>Target dan tanggal tes</h2><p class="sub">Angka bawaan adalah perkiraan umum tes kedinasan. Sesuaikan saat pengumuman resmi keluar.</p>
       <div class="form">
         <div><label>Tanggal SKD<input type="date" id="pTes"></label></div>
@@ -862,11 +869,12 @@ async function refresh(){
   D={lari,latihan:latihan.map(x=>({...x,nilai:Number(x.nilai)})),misi,checkin,harian,soal,jawaban};
   P={mulai:p.data?p.data.mulai:null,target:(p.data&&p.data.target)||{},tgl_tes:p.data&&p.data.tgl_tes?p.data.tgl_tes:null};
   render();
+  setTimeout(()=>{if(typeof pasangTargetBaru==='function')pasangTargetBaru().catch(()=>{})},0);
 }
 async function load(){try{await refresh()}catch(e){toast(e.message)}}
 
 /* ---------- Target ---------- */
-const TG_DEF={pushup:40,situp:45,pullup:10,lari12:2800,shuttle:18,twk:65,tiu:80,tkp:166,skd:430};
+const TG_DEF={pushup:50,situp:50,pullup:20,lari12:3200,shuttle:18,twk:65,tiu:80,tkp:166,skd:430};
 const AW_DEF={pushup:20,situp:25,pullup:2,lari12:2200};
 function rawT(){const r=P.target||{};return r.t||(('pushup' in r||'twk' in r)?r:{})}
 function TG(){const o={...TG_DEF},t=rawT();Object.keys(t).forEach(k=>{if(t[k]!=null&&t[k]!==''&&k in TG_DEF)o[k]=Number(t[k])});return o}
@@ -912,6 +920,7 @@ function sesiMenit(sf){return Math.round((sf||[]).reduce((a,s)=>a+(s.k==='reps'?
 function plan(day,o){
   o=o||{};const pi=prog(),F=o.fct||1,ph=fase(day,pi.total),w=Math.ceil(day/7),taper=ph==='Pengurangan',left=pi.total-day;
   const tg=addDays(P.mulai||today(),day-1),realDow=new Date(tg+'T12:00:00').getDay(),JJ=(P.target&&P.target.jadwal)||{},dow=o.paksa!=null?o.paksa:(JJ.tukar&&tg in JJ.tukar)?Number(JJ.tukar[tg]):realDow,pendek=!!(JJ.pendek&&JJ.pendek[tg]);
+  if(!o.lama&&o.paksa==null&&tg>=JADWAL_BARU)return planBaru(day,tg,realDow,o);
   if(o.paksa==null&&JJ.gabung&&Array.isArray(JJ.gabung[tg])&&JJ.gabung[tg].length>1)return planGabung(day,o,JJ.gabung[tg]);
   const pi_=['Dasar','Bangun','Puncak','Pengurangan'].indexOf(ph);
   const mulaiFase=ph==='Dasar'?1:ph==='Bangun'?Math.ceil(pi.total*.4):ph==='Puncak'?Math.ceil(pi.total*.8):pi.total-6,k=Math.max(0,Math.floor((day-mulaiFase)/7));
@@ -998,7 +1007,211 @@ function plan(day,o){
   if(pendek)judul+=' (versi pendek)';
   return [{id:day+'-f',teks:tf,sesi:sf,tipe,judul,menit:sesiMenit(sf),tg,dow:realDow,ditukar:dow!==realDow},{id:day+'-s',teks:s,sesi:null,tipe:'skd',tryout},{id:day+'-p',teks:p,sesi:ps,tipe:'pulih'}];
 }
-const cntDay=d=>['f','s','p'].filter(x=>DONE.has(d+'-'+x)).length;
+/* ================== JADWAL BARU (mulai Jumat 13 November 2026) ==================
+   Target: 5 km di bawah 20 menit, trail run Bromo 20 km, dan tes SKD/samapta.
+   Pola mingguan mulai Senin 16 Nov. Progres 4 minggu menuju minggu lomba,
+   bergeser otomatis bila tanggal lomba diubah di Profil. */
+const JADWAL_BARU='2026-11-13',POLA_MULAI='2026-11-16',LOMBA_DEF={tanggal:'2026-12-20',nama:'Fun run Bromo 35K'};
+function lomba(){const l=(P.target&&P.target.lomba)||{};return {tanggal:l.tanggal||LOMBA_DEF.tanggal,nama:l.nama||LOMBA_DEF.nama}}
+// progres 4 minggu sebelum minggu lomba (istirahat interval: jalan atau jogging pelan)
+const PROG4={
+  1:{iv:{n:6,d:400,t:'1:35',rest:90},tempo:{m:15,pace:'5:00'},lr:12},
+  2:{iv:{n:8,d:400,t:'1:33',rest:90},tempo:{m:20,pace:'4:50'},lr:15},
+  3:{iv:{n:5,d:800,t:'3:15',rest:90},tempo:{m:20,pace:'4:40'},lr:18},
+  4:{iv:{n:4,d:1000,t:'4:00',rest:120},tempo:{m:20,pace:'4:30'},lr:12,dua:true}};
+// setelah lomba: blok 5 km (saran coach, berulang tiap 4 minggu)
+const PROG5K={
+  1:{iv:{n:8,d:400,t:'1:33',rest:90},tempo:{m:20,pace:'4:40'},lr:12},
+  2:{iv:{n:5,d:800,t:'3:15',rest:90},tempo:{m:20,pace:'4:30'},lr:14},
+  3:{iv:{n:4,d:1000,t:'4:00',rest:120},tempo:{m:20,pace:'4:20'},lr:12},
+  4:{iv:{n:6,d:400,t:'1:35',rest:90},tempo:{m:15,pace:'4:40'},lr:10,dua:true,tes5k:true}};
+PROG5K[2].tes12=true;   // minggu 2: tes lari 12 menit, minggu 4: tes 5 km (bergantian tiap 2 minggu)
+const TAHAP12=[{sampai:'2026-12-31',m:2700,nama:'Tahap 1 (Desember)'},{sampai:'2027-01-31',m:2900,nama:'Tahap 2 (Januari)'},{sampai:'2099-12-31',m:3200,nama:'Tahap 3 (Februari)'}];
+function tahap12(tg){const akhir=TG().lari12||3200,t=TAHAP12.find(x=>tg<=x.sampai)||TAHAP12[2];return {...t,m:t===TAHAP12[2]?akhir:Math.min(akhir,t.m)}}
+function best12(){return D.latihan.filter(l=>l.jenis==='lari12'&&Number(l.nilai)>0).map(l=>Number(l.nilai)).sort((a,b)=>b-a)}
+// target 5 km bertahap: tiap tahap berlaku sampai akhir bulannya
+const TAHAP5K=[{sampai:'2026-12-31',menit:23,nama:'Tahap 1 (Desember)'},{sampai:'2027-01-31',menit:21.5,nama:'Tahap 2 (Januari)'},{sampai:'2099-12-31',menit:20,nama:'Tahap 3 (Februari)'}];
+const fmtMnt=m=>Math.floor(m)+':'+String(Math.round((m%1)*60)).padStart(2,'0');
+function tahap5k(tg){const akhir=(P.target&&P.target.lari5k)||20,t=TAHAP5K.find(x=>tg<=x.sampai)||TAHAP5K[2];return {...t,menit:t===TAHAP5K[2]?akhir:Math.max(akhir,t.menit)}}
+function best5k(){const r=runsAll().filter(x=>x.km>=4.95&&x.km<=5.3).map(x=>({tg:x.tanggal,m:x.menit/x.km*5}));return r.sort((a,b)=>a.m-b.m)}
+const mmssN=s=>{const m=String(s).split(':').map(Number);return m[0]*60+(m[1]||0)};
+const blokKe=tg=>Math.floor(diffDays(POLA_MULAI,wkStart(tg))/7)+1;
+function infoMinggu(tg){
+  if(tg<POLA_MULAI)return {jenis:'transisi',label:'Minggu transisi'};
+  const L=lomba().tanggal,wk=blokKe(tg),lw=blokKe(L);
+  if(wk===lw)return {jenis:'lomba',label:'Minggu acara: '+lomba().nama,L};
+  if(wk<lw){const raw=4-(lw-1-wk),pw=Math.max(1,raw);return {jenis:'blok',pw,p:PROG4[pw],label:raw<1?'Persiapan (setara minggu 1)':'Minggu '+pw+' dari 4 menuju '+lomba().nama}}
+  const k=wk-lw;
+  if(k===1)return {jenis:'pulih',label:'Minggu pemulihan setelah Bromo'};
+  const pw=((k-2)%4)+1;return {jenis:'pasca',pw,p:PROG5K[pw],label:'Blok 5 km, minggu '+pw+' dari 4'};
+}
+function futsalMinggu(tg){
+  const ws=wkStart(tg),J=(P.target&&P.target.jadwal)||{},g=J.ganti||{};
+  return D.checkin.some(c=>isBola(c)&&c.tanggal>=ws&&c.tanggal<=tg)||Object.keys(g).some(d=>d>=ws&&d<tg&&(g[d]||[]).includes(6));
+}
+function planBaru(day,tg,dow,o){
+  const pi=prog(),left=diffDays(tg,pi.tes),J=(P.target&&P.target.jadwal)||{},pendek=!!(J.pendek&&J.pendek[tg]),F=Math.min(1,o.fctSehat!=null?o.fctSehat:1),kaki=o.kaki;
+  const W=infoMinggu(tg),dua=(W.p&&W.p.dua)||W.jenis==='lomba'||W.jenis==='pulih';
+  const nS=n=>Math.max(1,dua?2:n-(pendek?1:0)),rr=x=>Math.max(1,Math.round(x*F*(pendek?.7:1))),mnt=x=>Math.max(10,Math.round(x*(pendek?.7:1)));
+  const pem=T_('Pemanasan: jalan cepat, putar sendi, peregangan dinamis',300,'Jangan lewati pemanasan. Cedera menghambat targetmu.');
+  const pend=T_('Pendinginan: jalan pelan, peregangan betis dan telapak kaki',240,'Tarik jari kaki ke arah tulang kering, tahan 30 detik tiap kaki.');
+  const jedaJalan=sec=>({k:'rest',t:'Jalan atau jogging pelan',sec,tip:'Jangan berhenti total. Atur napas untuk ulangan berikutnya.'});
+  const sepeda=m=>[pem,T_('Bersepeda santai '+m+' menit',m*60,'Pengganti lari saat telapak kaki nyeri.'),I_('sepeda','Berapa km yang kamu tempuh?'),pend];
+  // ---- sesi lari
+  const jog=(m,ket)=>{m=mnt(m);if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda santai (pengganti jogging)',teks:`Telapak kaki sedang nyeri, jadi jogging diganti sepeda santai ${m} menit.`,sesi:sepeda(m)};
+    return {tipe:'lari',kode:5,judul:'Jogging santai '+m+' menit',teks:`Jogging santai ${m} menit, pace 6:30–7:00/km. Napas masih bisa ngobrol.${ket?' '+ket:''}`,
+      sesi:[T_('Jalan cepat 3 menit',180,'Pemanasan ringan.'),T_('Jogging santai '+m+' menit (pace 6:30–7:00/km)',m*60,'Pelan dan rileks. Kalau terengah-engah, perlambat.',true),I_('lari','Berapa km yang kamu tempuh?'),pend]}};
+  const interval=iv=>{if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda (pengganti interval)',teks:'Telapak kaki sedang nyeri, jadi interval diganti sepeda 30 menit.',sesi:sepeda(30)};
+    const n=pendek?Math.max(2,Math.round(iv.n*.6)):iv.n,jarak=iv.d>=1000?(iv.d/1000)+' km':iv.d+' m',ts=mmssN(iv.t),istir=iv.rest>=120?'2 menit':'90 detik';
+    const s=[pem,T_('Jogging pemanasan 10 menit',600,'Pelan, siapkan kaki untuk lari cepat.',true)];
+    for(let i=1;i<=n;i++){s.push(T_(`Lari ${jarak}, ulangan ${i} dari ${n} (target ${iv.t})`,ts+20,`Target ${iv.t}. Kencang tapi terkontrol, jaga kecepatan sama tiap ulangan. Tekan Selesai saat sampai.`,true));if(i<n)s.push(jedaJalan(iv.rest))}
+    s.push(T_('Jogging pendinginan 10 menit',600,'Pelan sekali.',true),pend);
+    return {tipe:'lari',kode:2,berat:true,judul:`Interval ${n} x ${jarak}`,teks:`Sesi berat. Interval ${n} x ${jarak} @${iv.t}, istirahat ${istir} jalan atau jogging pelan. Tidak ada sesi lain hari ini.`,sesi:s}};
+  const tempo=t=>{if(futsalMinggu(tg)){const j=jog(30,'Tempo diganti jogging santai karena minggu ini kamu sudah main futsal atau bola.');j.judul+=' (pengganti tempo)';return j}
+    if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda (pengganti tempo)',teks:'Telapak kaki sedang nyeri, jadi tempo diganti sepeda 30 menit.',sesi:sepeda(30)};
+    const m=mnt(t.m);
+    return {tipe:'lari',kode:5,berat:true,judul:`Tempo ${m} menit @${t.pace}/km`,teks:`Sesi berat. Jogging 10 menit, lalu tempo ${m} menit di pace ${t.pace}/km (napas berat tapi terkendali, hanya bisa bicara 2–3 kata), lalu jogging pelan 10 menit.`,
+      sesi:[pem,T_('Jogging pemanasan 10 menit',600,'Pelan dulu.',true),T_(`Tempo ${m} menit, pace ${t.pace}/km`,m*60,'Kecepatan stabil dari awal sampai akhir. Jangan start terlalu cepat.',true),T_('Jogging pendinginan 10 menit',600,'Pelan sekali.',true),I_('lari','Berapa km total yang kamu tempuh?'),pend]}};
+  const longRun=(km,trail,pace)=>{if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda (pengganti long run)',teks:'Telapak kaki sedang nyeri, jadi long run diganti sepeda santai 60 menit.',sesi:sepeda(60)};
+    km=pendek?Math.round(km*.7):km;const est=km*(trail?8:7.25)*60;
+    return {tipe:'lari',kode:5,judul:`Long run ${km} km${trail?' (tanjakan/trail)':''}`,
+      teks:trail?`Long run ${km} km di jalan menanjak atau trail, pace santai. Boleh jalan di tanjakan. Bawa air minum, dan makan ringan kalau lebih dari 75 menit.`:`Long run ${km} km, pace ${pace||'7:00–7:30'}/km. Santai, napas masih bisa ngobrol. Bawa air minum.`,
+      sesi:[T_('Jalan cepat 5 menit',300,'Pemanasan ringan.'),T_(`Long run ${km} km${trail?', boleh jalan di tanjakan':', pace '+(pace||'7:00–7:30')+'/km'}`,est,'Pace santai. Tujuannya daya tahan, bukan kecepatan. Tekan Selesai saat sampai.',true),I_('lari','Berapa km yang kamu tempuh?'),pend]}};
+  // ---- full body: upper body, kaki, core
+  const pullSet=n=>{const mx=maxNow('pullup'),r=mx-2;
+    return r>=1?sets_('Pull up (maksimal dikurangi 2)',n,rr(r),90,'Dagu melewati palang, tanpa ayunan kaki.')
+      :sets_('Pull up negatif (lompat ke atas, turun pelan 5 detik)',n,3,90,'Pull up maksimalmu masih di bawah 3, jadi pakai versi negatif dulu.')};
+  const pullTks=n=>{const r=maxNow('pullup')-2;return r>=1?`pull up ${n} x ${rr(r)}`:`pull up negatif ${n} x 3`};
+  const plank=(n,sec,nama)=>{const a=[];for(let i=1;i<=n;i++){a.push(T_(`${nama} ${i} dari ${n}`,sec,'Perut dan bokong dikencangkan, badan lurus.'));if(i<n)a.push(Z_(30))}return a};
+  const plankSamping=(n,sec)=>{const a=[];for(let i=1;i<=n;i++){a.push(T_(`Plank samping kanan ${i} dari ${n}`,sec,'Pinggul jangan turun.'),T_(`Plank samping kiri ${i} dari ${n}`,sec,''));if(i<n)a.push(Z_(30))}return a};
+  const fbA=()=>({tipe:'kekuatan',kode:3,judul:'Full Body A',teks:`Upper: ${pullTks(nS(5))} (maksimal dikurangi 2), push up ${nS(4)} x ${rr(25)}, dips ${nS(3)} x ${rr(12)}. Kaki: squat ${nS(3)} x ${rr(15)}, lunge ${nS(3)} x ${rr(12)} per kaki, step up ${nS(3)} x ${rr(12)} per kaki, calf raise ${nS(3)} x ${rr(20)}, single-leg deadlift ${nS(3)} x ${rr(10)} per kaki. Core: sit up ${nS(4)} x ${rr(25)}, plank ${nS(3)} x 45 detik.`,
+    sesi:[pem].concat(pullSet(nS(5)),[Z_(90)],sets_('Push up',nS(4),rr(25),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',nS(3),rr(12),60,'Pakai kursi yang kokoh. Siku ditekuk sampai 90 derajat.'),[Z_(90)],
+      sets_('Squat',nS(3),rr(15),60,'Lutut searah jari kaki, punggung tegak.'),[Z_(60)],sets_('Lunge (per kaki)',nS(3),rr(12),60,'Lutut belakang hampir menyentuh lantai.'),[Z_(60)],
+      sets_('Step up di bangku atau tangga (per kaki)',nS(3),rr(12),60,'Dorong dengan tumit kaki yang naik.'),[Z_(60)],sets_('Calf raise',nS(3),rr(20),45,'Naik 2 detik, turun 3 detik. Bagus untuk telapak kaki dan tanjakan.'),[Z_(45)],
+      sets_('Single-leg deadlift (per kaki)',nS(3),rr(10),60,'Punggung lurus, pinggul ke belakang. Pegang dinding kalau goyah.'),[Z_(60)],
+      sets_('Sit up',nS(4),rr(25),60,'Jangan menarik leher dengan tangan.'),[Z_(45)],plank(nS(3),45,'Plank'),[pend])});
+  const fbB=ringan=>{const n=k=>ringan?2:nS(k);return {tipe:'kekuatan',kode:1,judul:'Full Body B'+(ringan?' ringan':''),teks:`Upper: ${pullTks(n(4))}, push up ${n(3)} x ${rr(ringan?20:30)}, dips ${n(3)} x ${rr(ringan?8:12)}. Core: sit up ${n(3)} x ${rr(ringan?20:30)}, plank samping ${n(3)} x 30 detik per sisi. Tanpa latihan kaki.`,
+    sesi:[pem].concat(pullSet(n(4)),[Z_(90)],sets_('Push up',n(3),rr(ringan?20:30),60,'Badan lurus, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',n(3),rr(ringan?8:12),60,'Pakai kursi yang kokoh.'),[Z_(90)],
+      sets_('Sit up',n(3),rr(ringan?20:30),60,'Jangan menarik leher dengan tangan.'),[Z_(45)],plankSamping(n(3),30),[pend])}};
+  const istirahat=(judul,teks,jalan)=>({tipe:'istirahat',kode:7,judul,teks,sesi:jalan?[T_('Jalan santai 30 menit (opsional)',1800,'Boleh juga istirahat total. Tekan Selesai kapan saja.',true)]:[T_('Istirahat total hari ini. Tekan Selesai untuk mencentang.',5,'Tidur cukup, makan bergizi, minum air yang banyak.',true)]});
+  const futsal=()=>({tipe:'futsal',kode:6,judul:'Futsal atau istirahat',teks:'Main futsal atau bola (catat lewat tombol ⚽ setelah main), atau istirahat. Kalau main futsal, tempo hari Jumat otomatis jadi jogging santai.',
+    sesi:[T_('Tidak main futsal? Istirahat atau jalan santai. Tekan Selesai untuk mencentang.',5,'Kalau main futsal, pakai tombol ⚽ Catat futsal saja.',true)]});
+  // ---- susun hari
+  let pagi=null,sore=null;
+  const G=(J.ganti||{})[tg];
+  if(left===0)pagi=istirahat('Hari tes SKD','Hari tes. Datang lebih awal, makan secukupnya, percaya pada latihanmu.');
+  else if(left===1)pagi=istirahat('Istirahat sebelum tes','Istirahat total sebelum tes. Siapkan berkas dan tidur cepat.',true);
+  else if(Array.isArray(G)&&G.length){
+    const sub=c=>c===6?futsal():c===0?{tipe:'renang',kode:0,judul:'Renang santai',teks:'Renang santai 30 menit, atau jalan santai kalau tidak ke kolam.',sesi:[T_('Renang santai 30 menit',1800,'Jangan berenang sendirian tanpa pengawas.'),T_('Peregangan 10 menit',600,'')]}
+      :c===8?{tipe:'lari',kode:8,judul:'Sepeda santai',teks:'Bersepeda santai 30 menit.',sesi:sepeda(30)}:c===7?istirahat('Istirahat aktif','Jalan santai dan peregangan.',true)
+      :c===9?(()=>{const x=plan(day,{...o,paksa:9,lama:true})[0];return {...x,kode:9}})():c===1?fbB():c===3?fbA():c===2&&W.p?interval(W.p.iv):jog(30);
+    const parts=G.map(sub);pagi={...parts[0],judul:parts.map(x=>x.judul).join(' + '),teks:parts.map(x=>x.judul+': '+x.teks).join(' '),sesi:[].concat(...parts.map(x=>x.sesi||[])),ditukar:true};
+  }
+  else if(W.jenis==='transisi'){
+    if(tg==='2026-11-13'){pagi=jog(30);sore=fbB()}
+    else if(tg==='2026-11-14')pagi=longRun(12,false,'7:00–7:30');
+    else pagi=istirahat('Istirahat total','Istirahat total. Pola mingguan baru dimulai Senin.');
+  }
+  else if(W.jenis==='lomba'){
+    const d=diffDays(tg,W.L);
+    if(d===0)pagi={tipe:'lari',kode:5,judul:'Hari H: '+lomba().nama,teks:'Bersenang-senang dengan teman, targetnya finis dengan aman. Rute (dari GPX): sekitar 33 km, menanjak total 1.160 m, ketinggian 2.090–2.680 m. Km 3–6 tanjakan terberat (naik 520 m): jalan cepat, jangan dipaksa lari. Km 22–23 turunan curam: langkah pendek. Km 24–30 datar berpasir. Minum dan makan di setiap pos (Dingklik, Gumuk Pasir, Jemplang, Keciri). Bawa jaket karena dingin, dan senter kalau mulai gelap.',
+      sesi:[T_('Pemanasan jalan dan jogging pelan 10 menit',600,'Jangan pemanasan berlebihan.'),T_('Bromo 35K: jalan di tanjakan, lari santai di datar dan turunan',7*3600,'Makan sedikit tiap 45 menit. Tekan Selesai saat finis.',true),I_('lari','Berapa km yang kamu tempuh?')]};
+    else if(d===1)pagi=jog(20,'Sehari sebelum Bromo: pelan sekali, kaki harus segar. Siapkan tas, jaket, air, dan makanan.');
+    else if(d===3)pagi=jog(25,'Minggu acara: hanya lari santai.');
+    else if(d===5)pagi=jog(30,'Minggu acara: hanya lari santai.');
+    else if(d===4)pagi=fbB(true);
+    else if(d<0)pagi=istirahat('Pemulihan setelah Bromo','Istirahat atau jalan santai. Pijat ringan dan peregangan.',true);
+    else pagi=istirahat('Istirahat','Minggu acara: simpan tenaga.');
+  }
+  else if(W.jenis==='pulih'){
+    pagi=dow===1?jog(20,'Minggu pemulihan setelah Bromo.'):dow===3?jog(25,'Minggu pemulihan: tanpa interval.'):dow===5?fbB(true):dow===6?jog(40,'Lari santai, tanpa target kecepatan.'):istirahat('Istirahat','Minggu pemulihan setelah lomba. Jalan santai boleh.',dow!==0);
+  }
+  else{ // blok persiapan lomba atau blok 5 km
+    const p=W.p;
+    if(dow===1){pagi=jog(30);sore=fbA()}
+    else if(dow===2)pagi=istirahat('Istirahat atau jalan santai','Istirahat, atau jalan santai 30 menit.',true);
+    else if(dow===3)pagi=interval(p.iv);
+    else if(dow===4)pagi=futsal();
+    else if(dow===5){pagi=p.tes5k||p.tes12?jog(30,'Besok tes lari, jadi tempo diganti jogging santai supaya kaki segar.'):tempo(p.tempo);sore=fbB()}
+    else if(dow===6)pagi=p.tes12?(()=>{const T12=tahap12(tg);return {tipe:'tes',kode:5,judul:'Tes lari 12 menit (target '+T12.m+' m)',teks:`Lari 12 menit sejauh mungkin di lintasan atau rute yang jaraknya pasti. ${T12.nama}: ${T12.m} m (pace ${fmtMnt(12/(T12.m/1000))}/km). Jangan hanya mengandalkan GPS HP.`,
+        sesi:[pem,T_('Jogging pemanasan 10 menit',600,'',true),T_('Lari 12 menit sejauh mungkin',720,'Mulai stabil, percepat di 3 menit terakhir.'),I_('lari12','Berapa meter yang kamu tempuh dalam 12 menit?'),pend]}})()
+      :p.tes5k?(()=>{const T5=tahap5k(tg),tm=fmtMnt(T5.menit);return {tipe:'tes',kode:5,judul:'Tes lari 5 km (target '+tm+')',teks:`Tes 5 km di jalan datar. ${T5.nama}: di bawah ${tm}. Jogging 10 menit dulu, lalu lari 5 km secepat yang kamu bisa. Ukur jarak 5 km yang pasti (lintasan atau rute yang sudah diukur), jangan hanya mengandalkan GPS HP.`,
+        sesi:[pem,T_('Jogging pemanasan 10 menit',600,'',true),T_('Tes 5 km, secepat mungkin',Math.round(T5.menit*60),'Target di bawah '+tm+'. Tekan Selesai tepat saat sampai.',true),I_('lari','Berapa km yang kamu tempuh? (isi 5)'),pend]}})()
+      :longRun(p.lr,true);
+    else pagi=istirahat('Istirahat total','Istirahat total. Pulihkan tenaga untuk minggu depan.');
+  }
+  if(pendek&&pagi)pagi.judul+=' (versi pendek)';
+  const t0=tg,tSkd=left<=1?'Guru SKD: baca catatan ringan saja, jangan belajar materi baru.':'Guru SKD: 20 soal dari topik terlemahmu, dipilih otomatis dari statistik jawabanmu.';
+  const ps=[T_('Chin tuck: tarik dagu lurus ke belakang, tahan 5 detik, ulangi 10 kali',60,'Pandangan lurus ke depan, jangan menunduk.'),T_('Putar bahu ke belakang pelan-pelan',45,'Bahu turun, jauhkan dari telinga.'),
+    T_('Tarik jari kaki kanan ke arah tulang kering, tahan',30,'Peregangan telapak kaki.'),T_('Tarik jari kaki kiri, tahan',30,''),T_('Peregangan betis di dinding, kanan lalu kiri',60,'Tumit tetap menempel lantai.')];
+  const out=[{...pagi,id:day+'-f',menit:sesiMenit(pagi.sesi),tg:t0,dow,sesiKe:sore?'pagi':null,minggu:W.label},
+    {id:day+'-s',teks:tSkd,sesi:null,tipe:'skd',tryout:false},
+    {id:day+'-p',teks:'Peregangan leher dan telapak kaki 4 menit, minum air 2 liter, tidur minimal 7 jam.',sesi:ps,tipe:'pulih'}];
+  if(sore)out.push({...sore,id:day+'-f2',menit:sesiMenit(sore.sesi),tg:t0,dow,sesiKe:'sore'});
+  return out;
+}
+const urutMisi=m=>/-f$/.test(m.id)?0:/-f2$/.test(m.id)?1:/-p$/.test(m.id)?2:3;
+/* ---------- Peringatan kesehatan ---------- */
+const RE_BAHAYA=/pusing|sesak|nyeri dada|dada (sakit|nyeri|sesak|berat|perih)|sakit dada|berdebar|pingsan|berkunang|nyeri (yang )?(menetap|terus|tidak hilang|ga hilang|gak hilang|berhari)/i;
+function deteksiBahaya(){
+  const t0=today(),baru=tg=>tg&&diffDays(tg,t0)<=3&&tg<=t0,out=[];
+  D.lari.forEach(r=>{if(baru(r.tanggal)&&RE_BAHAYA.test(r.catatan||''))out.push([r.tanggal,r.catatan])});
+  D.checkin.forEach(c=>{if(baru(c.tanggal)&&RE_BAHAYA.test(c.catatan||''))out.push([c.tanggal,c.catatan])});
+  D.harian.forEach(h=>{if(baru(h.tanggal)&&RE_BAHAYA.test((h.catatan||'')+' '+(h.alasan||'')))out.push([h.tanggal,h.catatan||h.alasan])});
+  // nyeri menetap: lokasi sama dicatat nyeri 3 atau lebih, minimal 3 kali dalam 7 hari
+  const nyeri={};D.checkin.filter(c=>Number(c.nyeri)>=3&&c.lokasi&&diffDays(c.tanggal,t0)<=7).forEach(c=>(nyeri[c.lokasi]=nyeri[c.lokasi]||[]).push(c.tanggal));
+  Object.entries(nyeri).forEach(([l,ts])=>{if(ts.length>=3)out.push([ts.sort().slice(-1)[0],'nyeri '+l.toLowerCase()+' menetap ('+ts.length+' kali dalam seminggu)'])});
+  let ok='';try{ok=localStorage.getItem('bahayaOk')||''}catch(e){}
+  return out.filter(x=>x[0]>ok).sort((a,b)=>b[0].localeCompare(a[0]))[0]||null;
+}
+function htmlBahaya(b){return `<div class="cb bahaya"><b>⚠️ Hentikan latihan dulu</b><br>Kamu mencatat "${esc(String(b[1]).slice(0,80))}" (${fmtTgl(b[0])}). Pusing, sesak, nyeri dada, atau nyeri yang menetap harus diperiksakan ke dokter sebelum lanjut latihan. Nyeri dada, sesak berat, atau hampir pingsan: segera ke IGD.
+  <div class="row"><button class="btn sm ghost" onclick="tutupBahaya('${b[0]}')">Sudah diperiksa, lanjutkan</button></div></div>`}
+function tutupBahaya(tg){try{localStorage.setItem('bahayaOk',tg)}catch(e){}render()}
+function peringatanBahaya(teks){
+  if(!RE_BAHAYA.test(teks||''))return false;
+  modal(`<h2 class="dn">⚠️ Hentikan latihan</h2><div class="cb bahaya">Kamu mencatat keluhan yang perlu diwaspadai: "${esc(String(teks).slice(0,100))}".</div>
+  <p>Berhenti latihan dulu dan periksakan ke dokter atau puskesmas sebelum lanjut. Kalau nyeri dada, sesak berat, atau hampir pingsan, segera ke IGD terdekat.</p>
+  <div class="row"><button class="btn" onclick="tutupModal()">Saya mengerti</button></div>`);
+  return true;
+}
+function cekPace(km,menit){const p=menit/km;if(km>0&&menit>0&&p<2.5){const s=Math.round(p*60);
+  throw new Error(`Pace ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}/km tidak masuk akal (lebih cepat dari 2:30/km, rekor dunia saja sekitar 2:30/km). Cek ulang jarak (km) dan durasi (menit).`)}}
+/* ---------- Target baru: dipasang sekali tanpa menghapus data lama ---------- */
+let MIGRASI=false;
+async function pasangTargetBaru(){
+  if(!MIGRASI&&USER&&P&&P.target&&P.target.v2&&P.target.lomba&&P.target.lomba.nama==='Trail run Bromo 20 km'){MIGRASI=true;
+    await db.from('profil').upsert({user_id:USER.id,target:{...P.target,lomba:{...P.target.lomba,nama:LOMBA_DEF.nama}}},{onConflict:'user_id'});await refresh();return}
+  if(MIGRASI||!USER||!P||(P.target&&P.target.v2))return;MIGRASI=true;
+  const t={...(rawT()||{}),pushup:50,situp:50,pullup:20,lari12:3200,shuttle:18};
+  const target={...(P.target||{}),t,lomba:(P.target&&P.target.lomba)||LOMBA_DEF,lari5k:20,v2:true};
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target,tgl_tes:'2027-02-20'},{onConflict:'user_id'});
+  if(!error){await refresh();toast('Jadwal dan target baru sudah dipasang ✓')}
+}
+async function simpanLomba(){
+  const tg=$('lbTg').value,nm=$('lbNm').value.trim()||LOMBA_DEF.nama,t5=Number($('t5k').value)||20;
+  if(!tg){$('mlb').textContent='Isi tanggal acara.';return}
+  if(tg<POLA_MULAI){$('mlb').textContent='Tanggal acara harus setelah 16 November 2026.';return}
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target:{...(P.target||{}),lomba:{tanggal:tg,nama:nm},lari5k:t5}},{onConflict:'user_id'});
+  if(error){$('mlb').textContent=error.message;return}
+  $('mlb').textContent='';await refresh();
+  const L=blokKe(tg);toast(`Tersimpan. Minggu 4 sekarang ${fmtTgl(addDays(POLA_MULAI,(L-2)*7))}.`);
+}
+function renderLomba(){
+  const l=lomba(),set=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v};
+  set('lbTg',l.tanggal);set('lbNm',l.nama);set('t5k',(P.target&&P.target.lari5k)||20);
+  const b=$('lbInfo');if(!b)return;
+  const L=blokKe(l.tanggal),w=[1,2,3,4].map(i=>{const ws=addDays(POLA_MULAI,(L-1-(5-i))*7);return ws>=POLA_MULAI?`Minggu ${i}: ${fmtTgl(ws).split(', ')[1]||ws}`:`Minggu ${i}: (terlewati)`});
+  const bs=best5k(),best=bs.length?bs[0].m:null,akhir=(P.target&&P.target.lari5k)||20,kini=tahap5k(today());
+  const th=TAHAP5K.map((x,i)=>{const tm=i===2?akhir:Math.max(akhir,x.menit),ok=bs.some(r=>r.m<=tm);return `<div class="stk"><span>${ok?'✅':x===TAHAP5K.find(y=>today()<=y.sampai)?'👉':'⬜'} ${x.nama}: di bawah ${fmtMnt(tm)}</span><b>pace ${fmtMnt(tm/5)}/km</b></div>`}).join('');
+  const b12=best12(),th12=TAHAP12.map((x,i)=>{const m=i===2?(TG().lari12||3200):Math.min(TG().lari12||3200,x.m),ok=b12.some(v=>v>=m);return `<div class="stk"><span>${ok?'✅':x===TAHAP12.find(y=>today()<=y.sampai)?'👉':'⬜'} ${x.nama}: ${m} m</span><b>pace ${fmtMnt(12/(m/1000))}/km</b></div>`}).join('')+`<p class="msg">Lari 12 menit terbaik: <b>${b12.length?b12[0]+' m':'belum ada'}</b>.</p>`;
+  b.innerHTML=`<p class="msg">${w.join(' · ')} · Minggu acara: ${fmtTgl(wkStart(l.tanggal)).split(', ')[1]||''}</p>
+   <h3 class="lbl" style="margin-top:12px">Target 5 km bertahap</h3>${th}
+   <h3 class="lbl" style="margin-top:12px">Target lari 12 menit bertahap</h3>${th12}
+   <p class="msg">5 km terbaik di aplikasi: <b>${best?fmtMnt(best):'belum ada'}</b>. Target sekarang: <b>${fmtMnt(kini.menit)}</b>. Setelah Bromo, hari Sabtu ada tes bergantian: lari 12 menit, lalu 2 minggu kemudian 5 km. Lari 5 km kapan pun yang kamu catat juga ikut dihitung.</p>`;
+}
+
+const opsionalBaru=m=>m&&m.tg>=JADWAL_BARU&&(m.tipe==='istirahat'||m.tipe==='futsal');
+const cntDay=d=>['f','s','p'].filter(x=>DONE.has(d+'-'+x)||(x==='f'&&P.mulai&&addDays(P.mulai,d-1)>=JADWAL_BARU&&opsionalBaru(plan(d)[0]))).length;
 const harianOf=t=>HMAP[t]||null;
 function nadiBase(){const t=today();return median(D.harian.filter(h=>h.nadi&&h.tanggal<t&&diffDays(h.tanggal,t)<=10).slice(-7).map(h=>h.nadi))}
 
@@ -1007,22 +1220,24 @@ function buildState(){
   const pi=prog(),t0=today(),day=pi.day;
   let fct=1;const why=[];
   if(day>3&&day<=pi.total){const c=[day-1,day-2,day-3].map(cntDay);
-    if(c.filter(x=>x===0).length>=2){fct*=.8;why.push(['Beberapa hari terakhir kosong, jadi target hari ini turun 20%. Kerjakan semuanya, lalu kita naikkan lagi.',1])}
-    else if(c.every(x=>x>=3)){fct*=1.1;why.push(['3 hari terakhir tuntas. Target hari ini naik 10%.',0])}}
+    const baruH=t0>=JADWAL_BARU;
+    if(c.filter(x=>x===0).length>=2){if(!baruH)fct*=.8;why.push([baruH?'Beberapa hari terakhir kosong. Kembali ke jadwal hari ini saja, jangan dikejar semuanya sekaligus.':'Beberapa hari terakhir kosong, jadi target hari ini turun 20%. Kerjakan semuanya, lalu kita naikkan lagi.',1])}
+    else if(c.every(x=>x>=3)){if(!baruH)fct*=1.1;why.push([baruH?'3 hari terakhir tuntas. Pertahankan!':'3 hari terakhir tuntas. Target hari ini naik 10%.',0])}}
+  let sehat=1;
   const hy=harianOf(addDays(t0,-1)),ht=harianOf(t0)||{};
-  if(hy&&hy.alasan==='sakit'){fct*=.6;why.push(['Kemarin sakit. Hari ini sangat ringan. Kalau belum pulih, istirahat saja.',0])}
-  else if(hy&&hy.alasan==='capek'){fct*=.85;why.push(['Kemarin capek. Target sedikit diturunkan, tetapi tetap dikerjakan.',0])}
+  if(hy&&hy.alasan==='sakit'){fct*=.6;sehat*=.6;why.push(['Kemarin sakit. Hari ini sangat ringan. Kalau belum pulih, istirahat saja.',0])}
+  else if(hy&&hy.alasan==='capek'){fct*=.85;sehat*=.85;why.push(['Kemarin capek. Target sedikit diturunkan, tetapi tetap dikerjakan.',0])}
   const by=D.checkin.filter(c=>c.tanggal===addDays(t0,-1)&&isBola(c)).reduce((a,c)=>a+Number(c.menit||0),0);
   if(by>=90){fct*=.9;why.push(['Kemarin main bola '+by+' menit. Target hari ini turun sedikit (10%), lari tetap jalan.',0])}
-  const nb=nadiBase();if(ht.nadi&&nb&&ht.nadi>=nb+7){fct*=.85;why.push(['Nadi pagi '+ht.nadi+', lebih tinggi dari biasanya ('+nb+'). Tanda tubuh lelah, target diturunkan.',0])}
-  if(ht.energi&&ht.energi<=2){fct*=.85;why.push(['Energi pagi rendah. Target sedikit diturunkan.',0])}
+  const nb=nadiBase();if(ht.nadi&&nb&&ht.nadi>=nb+7){fct*=.85;sehat*=.85;why.push(['Nadi pagi '+ht.nadi+', lebih tinggi dari biasanya ('+nb+'). Tanda tubuh lelah, target diturunkan.',0])}
+  if(ht.energi&&ht.energi<=2){fct*=.85;sehat*=.85;why.push(['Energi pagi rendah. Target sedikit diturunkan.',0])}
   const kaki=D.checkin.some(c=>c.lokasi==='Telapak kaki'&&Number(c.nyeri)>=3&&diffDays(c.tanggal,t0)<=2);
   if(kaki)why.push(['Telapak kakimu nyeri dalam 3 hari terakhir. Coach mengganti lari dengan sepeda sampai membaik. Kalau nyeri tidak berkurang dalam seminggu, periksakan ke dokter.',0]);
   fct=Math.max(.5,Math.min(1.15,fct));
   const bolaToday=D.checkin.some(c=>c.tanggal===t0&&isBola(c));
   const inProg=day>=1&&day<=pi.total;
-  const missions=inProg?plan(day,{fct,bola:bolaToday,kaki}).map(m=>({...m,done:DONE.has(m.id)})):[];
-  const kejar=day>1&&day-1<=pi.total?plan(day-1,{fct:Math.min(1,fct),kaki}).filter(m=>!DONE.has(m.id)).map(m=>({...m,kejar:true,done:false})):[];
+  const missions=inProg?plan(day,{fct,fctSehat:sehat,bola:bolaToday,kaki}).map(m=>({...m,done:DONE.has(m.id)})):[];
+  const kejar=day>1&&day-1<=pi.total?plan(day-1,{fct:Math.min(1,fct),fctSehat:sehat,kaki}).filter(m=>!DONE.has(m.id)&&!(m.tg>=JADWAL_BARU&&!['skd','pulih'].includes(m.tipe))).map(m=>({...m,kejar:true,done:false})):[];
   const runs=runsAll();
   const pts=D.misi.reduce((a,r)=>a+Number(r.poin||0),0)+runs.reduce((a,r)=>a+5+Math.round(r.km*2),0)
     +D.latihan.reduce((a,l)=>a+(l.jenis==='skd'?10:['twk','tiu','tkp'].includes(l.jenis)?0:5),0)
@@ -1044,6 +1259,7 @@ function runsAll(){
 async function addRun(d){
   const km=Number(d.km),menit=Number(d.menit);
   if(!d.tanggal||!(km>0)||!(menit>0))throw new Error('Tanggal, jarak, dan durasi wajib diisi dengan benar.');
+  cekPace(km,menit);
   const {error}=await db.from('lari').insert({user_id:USER.id,tanggal:d.tanggal,km,menit,catatan:d.catatan||null});if(error)throw error;
 }
 async function addLatihan(d){
@@ -1062,8 +1278,8 @@ async function simpanHarian(tg,fields){
 }
 async function simpan(){
   $('bsv').disabled=true;$('m1').textContent='Menyimpan...';
-  try{await addRun({tanggal:$('tgl').value,km:$('km').value,menit:$('mnt').value,catatan:$('cat').value});
-    ['km','mnt','cat'].forEach(i=>$(i).value='');$('m1').textContent='';await refresh();toast('Lari tersimpan ✓')}
+  try{const ct=$('cat').value;await addRun({tanggal:$('tgl').value,km:$('km').value,menit:$('mnt').value,catatan:ct});
+    ['km','mnt','cat'].forEach(i=>$(i).value='');$('m1').textContent='';await refresh();if(!peringatanBahaya(ct))toast('Lari tersimpan ✓')}
   catch(e){$('m1').textContent=e.message}
   $('bsv').disabled=false;
 }
@@ -1153,15 +1369,16 @@ async function hapusCatatan(t,id){
   await refresh();toast('Catatan dihapus');
 }
 function banner(){
+  const bh=deteksiBahaya();
   let h=st.why.map(w=>`<div class="cb ${w[1]?'':'info'}">${esc(w[0])}</div>`).join('');
   const k=st.kemarin;
   if(k>=0)h=(k>=3?'<div class="cb ok">Kemarin tuntas 3 dari 3. Pertahankan, jangan kendor.</div>':'<div class="cb">Kemarin kamu cuma menyelesaikan '+k+' dari 3 misi. Itu bukan disiplin! Hari ini tidak ada alasan.</div>')+h;
-  return h;
+  return (bh?htmlBahaya(bh):'')+h;
 }
 function misiRow(m){
   const bolaFis=m.done&&m.id.endsWith('-f')&&D.checkin.some(c=>isBola(c)&&diffDays(P.mulai,c.tanggal)+1===Number(m.id.split('-')[0]));
   const lab=m.done?(bolaFis?'⚽':'✓'):'▶ Mulai';
-  const tag=(m.judul?(m.ditukar?'🔄 ':'')+m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
+  const tag=(m.judul?(m.sesiKe?(m.sesiKe==='pagi'?'🌅 Pagi: ':'🌇 Sore: '):'')+(m.ditukar?'🔄 ':'')+m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
   return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':m.tipe==='skd'?`onclick="mulaiTugas()"`:`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
 }
 function renderMisi(){
@@ -1174,9 +1391,9 @@ function renderMisi(){
   }
   const f=st.missions.find(m=>m.tipe!=='skd'&&m.tipe!=='pulih');
   $('pgT').textContent='🏃 Coach: '+(f?f.judul:'Latihan');
-  $('pgS').textContent=HARI[f?f.dow:0]+', minggu ke-'+Math.ceil(d/7)+', fase '+fase(d,pi.total)+(st.streak?' · 🔥 '+st.streak+' hari':'');
-  let h=banner()+st.missions.filter(m=>m.tipe!=='skd').map(misiRow).join('');
-  const kj=st.kejar.filter(m=>m.tipe!=='skd');
+  $('pgS').textContent=HARI[f?f.dow:0]+', '+(f&&f.minggu?f.minggu:'minggu ke-'+Math.ceil(d/7)+', fase '+fase(d,pi.total))+(st.streak?' · 🔥 '+st.streak+' hari':'');
+  let h=banner()+st.missions.filter(m=>m.tipe!=='skd').sort((a,b)=>urutMisi(a)-urutMisi(b)).map(misiRow).join('');
+  const kj=st.kejar.filter(m=>m.tipe!=='skd').sort((a,b)=>urutMisi(a)-urutMisi(b));
   if(kj.length)h+='<p class="lbl" style="margin-top:16px">Kejar dari kemarin (setengah poin)</p>'+kj.map(misiRow).join('');
   if(st.bolaToday)h+='<div class="cb info">Hari ini kamu main bola. Lari diganti bola, tetapi latihan kekuatan tetap wajib.</div>';
   box.innerHTML=h;renderGuruHari();
@@ -1261,6 +1478,7 @@ async function gantiBola(row){
   const pi=prog(),dn=diffDays(P.mulai,row.tanggal)+1;if(dn<1||dn>pi.total)return 'Tercatat.';
   const ws=wkStart(row.tanggal),n=D.checkin.filter(c=>isBola(c)&&wkStart(c.tanggal)===ws).length+1;
   const m=plan(dn)[0];
+  if(row.tanggal>=JADWAL_BARU&&m.tipe!=='futsal'){const dw=new Date(row.tanggal+'T12:00:00').getDay();return 'Tercatat.'+(dw>=1&&dw<=4?' Karena kamu main futsal minggu ini, tempo hari Jumat otomatis diganti jogging santai 30 menit.':'')}
   if(m.tipe==='futsal'){if(DONE.has(dn+'-f'))return 'Tercatat.';if(diffDays(row.tanggal,today())>1)return 'Tercatat.';const r=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:dn+'-f',poin:10});return r.error&&r.error.code!=='23505'?r.error.message:'Jadwal futsal tuntas. +10 poin.'}
   if(m.tipe==='tes')return 'Tes mingguan tetap wajib. Kalau sudah terlalu capek, kerjakan besok lewat misi kejar.';
   if(m.tipe==='kekuatan'||m.tipe==='kaki')return 'Bola tidak menggantikan latihan kekuatan. Latihan hari itu tetap wajib, versi 70%.';
@@ -1283,7 +1501,9 @@ async function kirimCheckin(){
   if(error){$('ciMsg').textContent=NEED?'Jalankan dulu update-3.sql di Supabase.':error.message;return}
   const b=balasCheckin(row);let t=b[0];
   if(bola){t=(await gantiBola(row))+' '+t;if(o.alasanTg)try{await simpanHarian(o.alasanTg,{alasan:'bola'})}catch(e){}}
-  await refresh();modal(coachHtml(t,b[1]));
+  await refresh();if(peringatanBahaya(row.catatan||''))return;
+  const bh=deteksiBahaya();if(bh&&/menetap/.test(bh[1])&&bh[0]===row.tanggal){modal(`<h2 class="dn">⚠️ Nyeri menetap</h2>${htmlBahaya(bh)}<div class="row"><button class="btn" onclick="tutupModal()">Saya mengerti</button></div>`);return}
+  modal(coachHtml(t,b[1]));
 }
 function cekAlasan(){
   if(ASKED||!P.mulai||NEED||!st)return;
@@ -1344,15 +1564,15 @@ function renderJadwal(){
   const pi=st.pi,ws=addDays(wkStart(today()),7*JW),t0=today();
   const dn0=diffDays(P.mulai,ws)+1,mg=Math.ceil(Math.max(1,dn0)/7);
   $('jdT').textContent=JW===0?'Minggu ini':JW===1?'Minggu depan':JW===-1?'Minggu lalu':(JW>0?JW+' minggu lagi':(-JW)+' minggu lalu');
-  const ph=dn0+3>=1&&dn0+3<=pi.total?fase(Math.max(1,dn0+3),pi.total):'';
-  $('jdS').textContent=fmtTgl(ws)+' sampai '+fmtTgl(addDays(ws,6))+(ph?', minggu ke-'+mg+', fase '+ph:'');
+  const baru=addDays(ws,6)>=JADWAL_BARU,ph=!baru&&dn0+3>=1&&dn0+3<=pi.total?fase(Math.max(1,dn0+3),pi.total):'';
+  $('jdS').textContent=fmtTgl(ws)+' sampai '+fmtTgl(addDays(ws,6))+(baru?', '+infoMinggu(addDays(ws,ws<JADWAL_BARU?6:0)).label:ph?', minggu ke-'+mg+', fase '+ph:'');
   const DESK={Dasar:'Fase Dasar: membangun pondasi dan teknik. Beban ringan sampai sedang.',Bangun:'Fase Bangun: beban naik, interval lebih panjang.',Puncak:'Fase Puncak: intensitas tertinggi, mirip tes asli.',Pengurangan:'Fase Pengurangan: beban turun supaya tubuh segar di hari tes.'};
-  let h=ph?`<p class="sub" style="margin:0 0 8px">${DESK[ph]}</p>`:'';
+  let h=ph?`<p class="sub" style="margin:0 0 8px">${DESK[ph]}</p>`:baru?'<p class="sub" style="margin:0 0 8px">Sesi berat hanya Rabu (interval) dan Jumat (tempo). Latihan pagi dan sore hanya Senin dan Jumat, jaraknya minimal 6 jam.</p>':'';
   for(let i=0;i<7;i++){const tg=addDays(ws,i),dn=diffDays(P.mulai,tg)+1;
     if(dn<1||dn>pi.total){h+=`<div class="jd off"><b>${HARI[(i+1)%7]}</b><span>Di luar program</span></div>`;continue}
-    const pl=plan(dn,{kaki:st.kaki}),f=pl[0],dn_=DONE.has(dn+'-f'),lewat=tg<t0;
-    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${f.ditukar?'🔄 ':''}${esc(f.judul)}<small>±${f.menit} menit${pl[1].tryout?', SKD: '+(pl[1].tryout==='penuh'?'tryout penuh':'tryout setengah'):', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
-      <p class="sub" style="margin:8px 0 4px">${esc(f.teks)}</p><ol class="jdl">${f.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol></details>`}
+    const pl=plan(dn,{kaki:st.kaki}),f=pl[0],f2=pl.find(x=>/-f2$/.test(x.id)),dn_=DONE.has(dn+'-f')&&(!f2||DONE.has(dn+'-f2')),lewat=tg<t0;
+    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${f.ditukar?'🔄 ':''}${f2?'🌅 '+esc(f.judul)+'<br>🌇 '+esc(f2.judul):esc(f.judul)}<small>±${f.menit+(f2?f2.menit:0)} menit${pl[1].tryout?', SKD: '+(pl[1].tryout==='penuh'?'tryout penuh':'tryout setengah'):', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
+      ${[f,f2].filter(Boolean).map(x=>`<p class="sub" style="margin:8px 0 4px">${f2?(x===f?'<b>Pagi:</b> ':'<b>Sore:</b> '):''}${esc(x.teks)}</p><ol class="jdl">${x.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol>`).join('')}</details>`}
   box.innerHTML=h;
 }
 function renderKal(){
@@ -1456,6 +1676,7 @@ function renderProg(){
 
 /* ---------- Profil ---------- */
 function renderPro(){
+  try{renderLomba()}catch(e){console.warn(e)}
   const T=TG(),A=AW(),set=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v==null?'':v};
   set('pTes',P.tgl_tes);Object.keys(TG_DEF).forEach(k=>set('t_'+k,T[k]));['pushup','situp','pullup','lari12'].forEach(k=>set('a_'+k,A[k]));
   set('pProf',(P.target&&P.target.profil)||'');
@@ -2167,8 +2388,12 @@ function say(t,mad){
   if(mad&&navigator.vibrate)navigator.vibrate(200);
   if($('vo').checked&&window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='id-ID';speechSynthesis.speak(u)}
 }
-function mulaiSesi(id){
+function mulaiSesi(id,paksa){
   const m=findMisi(id);if(!m||!m.sesi||m.done)return;
+  if(!paksa&&/-f2$/.test(id)){const idP=id.replace(/2$/,'');let jam=0;try{jam=Number(localStorage.getItem('jamPagi:'+idP))||0}catch(e){}
+    if(DONE.has(idP)&&jam&&Date.now()-jam<6*3600e3){const boleh=new Date(jam+6*3600e3);
+      modal(`<h2>⏳ Tunggu dulu</h2><p>Sesi pagi selesai jam ${new Date(jam).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}. Jarak sesi pagi dan sore minimal 6 jam supaya tubuh pulih, jadi sesi sore sebaiknya mulai jam <b>${boleh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</b>.</p>
+      <div class="row"><button class="btn" onclick="tutupModal()">Oke, nanti saja</button><button class="btn ghost" onclick="tutupModal();mulaiSesi('${id}',true)">Tetap mulai</button></div>`);return}}
   S={m,i:-1,ang:0,n:0,el:0,rem:0,last:0,t0:Date.now(),skd:{},pend:[]};$('gv').classList.add('on');say(pick('start'));nextS(true);
 }
 function stopT(){if(S)clearInterval(S.tm)}
@@ -2212,7 +2437,8 @@ function inputOk(){
   const T=TG(),t0=today(),push=p=>S.pend.push(p.catch(e=>toast(e.message)));
   let k='good',mad=false;
   const cmp=(val,tg,lower)=>{if(!tg)return;const r=lower?tg/val:val/tg;if(r<.7){k='low';mad=true}else if(r<1)k='mid'};
-  if(s.kind==='lari'){push(addRun({tanggal:t0,km:v,menit:Math.max(1,Math.round(S.last/60)),catatan:'Latihan terpandu'}));cmp(v,s.target)}
+  if(s.kind==='lari'){try{cekPace(v,Math.max(1,S.last/60))}catch(e){toast(e.message);return}push(addRun({tanggal:t0,km:v,menit:Math.max(1,Math.round(S.last/60)),catatan:'Latihan terpandu'}));cmp(v,s.target)}
+  else if(s.kind==='lari12'&&v>4800){toast('Lebih dari 4.800 m dalam 12 menit berarti pace di bawah 2:30/km. Itu tidak masuk akal, cek ulang angkanya.');return}
   else if(s.kind==='benar'){if(v<15){k='low';mad=true}else if(v<24)k='mid'}
   else{
     push(addLatihan({jenis:s.kind,tanggal:t0,nilai:v,catatan:S.m.tipe==='tes'?'Tes mingguan':'Latihan terpandu'}));
@@ -2232,7 +2458,8 @@ async function finS(){
   try{await selesaiMisi(m.id,m.kejar?5:10)}catch(e){toast(e.message)}
   await load();toast((m.kejar?'+5':'+10')+' poin. Misi selesai ✓');
   $('gb').innerHTML='<button class="btn white" onclick="tutup()">Tutup</button>';
-  if(m.id.endsWith('-f')&&m.tipe!=='istirahat'){tutup();formCheckin({jenis:'sesi',misi_id:m.id,menit})}
+  if(/-f$/.test(m.id)){try{localStorage.setItem('jamPagi:'+m.id,Date.now())}catch(e){}}
+  if(/-f2?$/.test(m.id)&&m.tipe!=='istirahat'&&m.tipe!=='futsal'){tutup();formCheckin({jenis:'sesi',misi_id:m.id,menit})}
 }
 function nyeri(){
   if(!S)return;stopT();say(pick('pain'));$('gin').innerHTML='';
@@ -2430,7 +2657,7 @@ function tugasHariIni(){
   const t0=today(),past=D.jawaban.filter(j=>j.tanggal<t0),tes=st.missions.some(m=>m.tipe==='skd'&&m.tryout);
   if(tes){const k=st.missions.find(m=>m.tipe==='skd').tryout,t=TRYOUT[TRYOUT[k]?k:'mini'];
     return {jenis:'tryout',key:TRYOUT[k]?k:'mini',msg:`Hari ini jadwal tes mingguan: ${k==='penuh'?'tryout penuh (seperti CAT)':t.judul.toLowerCase()}, ${t.twk+t.tiu+t.tkp} soal dalam ${t.menit} menit. Siapkan waktu tanpa gangguan, kerjakan sekali duduk.`,buckets:[{sub:'TWK',n:t.twk},{sub:'TIU',n:t.tiu},{sub:'TKP',n:t.tkp}],sec:t.menit*60}}
-  if(past.length<30)return {jenis:'latihan',msg:'Guru belum cukup mengenal kemampuanmu. Kerjakan 15 soal campuran dulu, supaya kelemahanmu kelihatan.',buckets:[{sub:'TWK',n:5},{sub:'TIU',n:5},{sub:'TKP',n:5}]};
+  if(past.length<30)return {jenis:'latihan',msg:'Guru belum cukup mengenal kemampuanmu. Kerjakan 20 soal campuran dulu, supaya topik terlemahmu kelihatan.',buckets:[{sub:'TWK',n:7},{sub:'TIU',n:7},{sub:'TKP',n:6}]};
   const tp=statTopikDari(past).filter(t=>t.n>=3),ss=statSub(past);
   const gap=s=>ss[s].p==null?-1:ss[s].p-AMBANG[s],lemahSub=['TWK','TIU','TKP'].sort((a,b)=>gap(a)-gap(b))[0];
   const b=[];let msg='';
@@ -2564,9 +2791,9 @@ function renderSkd(){
 }
 /* ---------- Tanya coach: ubah jadwal langsung di aplikasi ---------- */
 const AKT={0:'Renang recovery',1:'Upper body A',2:'Lari interval',3:'Leg day + shuttle',4:'Upper body B + lari',5:'Lari santai',6:'Futsal',7:'Istirahat aktif',8:'Sepeda santai',9:'Latihan dalam rumah'};
-function jadwalObj(){const j=(P.target&&P.target.jadwal)||{};return {tukar:{...(j.tukar||{})},pasang:{...(j.pasang||{})},pendek:{...(j.pendek||{})},gabung:{...(j.gabung||{})}}}
+function jadwalObj(){const j=(P.target&&P.target.jadwal)||{};return {tukar:{...(j.tukar||{})},pasang:{...(j.pasang||{})},pendek:{...(j.pendek||{})},gabung:{...(j.gabung||{})},ganti:{...(j.ganti||{})}}}
 let TGT=null;   // tanggal yang dimaksud pesan terakhir (hari ini, besok, atau nama hari)
-function templateOf(tg){const j=jadwalObj();return tg in j.tukar?Number(j.tukar[tg]):new Date(tg+'T12:00:00').getDay()}
+function templateOf(tg){if(tg>=JADWAL_BARU&&P.mulai){const dn=diffDays(P.mulai,tg)+1,f=dn>=1?plan(dn)[0]:null;if(f&&f.kode!=null)return f.kode}const j=jadwalObj();return tg in j.tukar?Number(j.tukar[tg]):new Date(tg+'T12:00:00').getDay()}
 async function simpanJadwal(J){
   const target={...(P.target||{}),jadwal:J};
   const {error}=await db.from('profil').upsert({user_id:USER.id,target},{onConflict:'user_id'});
@@ -2581,6 +2808,13 @@ async function ubahJadwal(akt,o){
   o=o||{};const t0=o.tg||TGT||today(),daftar=[...new Set(o.gabung||[akt])],hi=t0===today(),sebut=hi?'Hari ini':labelTg(t0);
   if(!P.mulai)return ['Program belum dimulai. Mulai dulu di menu Latihan.',0];
   if(!bisaUbah(t0))return [DONE.has(dnOf(t0)+'-f')?`Latihan ${hi?'hari ini':labelTg(t0)} sudah selesai, jadi jadwalnya tidak diubah. Kerja bagus!`:'Tanggal itu di luar program atau sudah dekat hari tes. Ikuti jadwal yang ada.',0];
+  if(t0>=JADWAL_BARU){
+    const J=jadwalObj(),dw=new Date(t0+'T12:00:00').getDay(),asli=(()=>{const orig=P.target.jadwal,tmp={...J,ganti:{...J.ganti}};delete tmp.ganti[t0];P.target.jadwal=tmp;const k=templateOf(t0);P.target.jadwal=orig;return k})();
+    if(daftar.includes(2)&&dw!==3)return [`Interval hanya hari Rabu, supaya sesi lari berat maksimal 2 kali seminggu (Rabu interval, Jumat tempo). ${sebut} pilih jogging santai saja, ya.`,0];
+    if(daftar.length===1&&akt===asli){if(t0 in J.ganti){delete J.ganti[t0];await simpanJadwal(J);return [`Oke, ${sebut.toLowerCase()} kembali ke jadwal asli.`,1]}return [`${sebut} memang jadwalnya ${AKT[akt]}. Lanjutkan sesuai rencana.`,0]}
+    J.ganti[t0]=daftar;delete J.pendek[t0];await simpanJadwal(J);
+    return [`Oke. ${sebut} jadi ${namaGab(daftar)}. Hari lain tidak digeser, supaya interval Rabu dan tempo Jumat tetap di tempatnya.${daftar.includes(6)&&dw>=1&&dw<=4?' Karena ada futsal minggu ini, tempo Jumat otomatis jadi jogging santai 30 menit.':''}`,1];
+  }
   const J=jadwalObj();
   // kalau tanggal ini sudah pernah ditukar, kembalikan dulu pasangannya supaya jadwal tidak kacau
   const p0=J.pasang[t0];if(p0){delete J.tukar[p0];delete J.pasang[p0]}delete J.pasang[t0];delete J.tukar[t0];delete J.gabung[t0];
@@ -2609,8 +2843,8 @@ async function jadwalPendek(tg){
 }
 async function kembalikanJadwal(tg){
   const t0=tg||TGT||today(),J=jadwalObj(),p=J.pasang[t0];
-  if(!(t0 in J.tukar)&&!J.pendek[t0]&&!(t0 in J.gabung))return ['Jadwalnya masih yang asli.',0];
-  delete J.tukar[t0];delete J.pendek[t0];delete J.gabung[t0];if(p){delete J.tukar[p];delete J.pasang[p]}delete J.pasang[t0];
+  if(!(t0 in J.tukar)&&!J.pendek[t0]&&!(t0 in J.gabung)&&!(t0 in J.ganti))return ['Jadwalnya masih yang asli.',0];
+  delete J.tukar[t0];delete J.pendek[t0];delete J.gabung[t0];delete J.ganti[t0];if(p){delete J.tukar[p];delete J.pasang[p]}delete J.pasang[t0];
   await simpanJadwal(J);return [`Jadwal ${t0===today()?'hari ini':labelTg(t0)} dikembalikan seperti semula.`,1];
 }
 // tanggal yang dimaksud: hari ini (bawaan), besok, lusa, atau nama hari
@@ -2676,8 +2910,8 @@ const TAHU=[
 async function balasCoach(teks){
   const t=rapikan(teks);TGT=cariTanggal(t);const f=hariIni(),cur=P.mulai?templateOf(TGT):null;
   // 1. tanda bahaya
-  if(ada(t,/ (sesak napas|sesak nafas|napas sesak|nafas sesak|pingsan|pusing berat|pusing banget|berkunang|jantung berdebar|berdebar|nyeri dada) /)||(ada(t,/ dada /)&&ada(t,/ (sesak|sakit|nyeri|berat|tertekan|perih) /)))
-    return ['Hentikan latihan hari ini. Nyeri dada, sesak napas, berdebar kencang, atau pusing berat harus diperiksakan ke dokter atau fasilitas kesehatan secepatnya. Jangan latihan sebelum diperiksa.',0];
+  if(ada(t,/ (sesak napas|sesak nafas|napas sesak|nafas sesak|pingsan|pusing|berkunang|jantung berdebar|berdebar|nyeri dada|nyeri menetap|nyeri terus|tidak hilang hilang) /)||(ada(t,/ dada /)&&ada(t,/ (sesak|sakit|nyeri|berat|tertekan|perih) /)))
+    return ['⚠️ Hentikan latihan hari ini. Pusing, sesak napas, nyeri dada, berdebar kencang, atau nyeri yang menetap harus diperiksakan ke dokter atau puskesmas dulu. Nyeri dada, sesak berat, atau hampir pingsan: segera ke IGD. Jangan latihan sebelum diperiksa.',0];
   // 2. cuaca dan tempat
   if(ada(t,/ (hujan|gerimis|becek|banjir|badai|petir|angin kencang|mendung) /)){
     if(cur==null)return ['Hujan bukan alasan berhenti. Program belum dimulai, mulai dulu di menu Hari ini.',0];
