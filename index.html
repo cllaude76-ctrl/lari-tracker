@@ -1737,7 +1737,7 @@ async function refresh(){
   render();
 }
 let SIAP=false;
-async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
+async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER)stravaSinkron(false)})}}catch(e){toast(e.message)}}
 async function simpanTarget(ubah){
   const target={...(P.target||{}),...ubah};
@@ -2075,6 +2075,34 @@ function renderStrava(){
   box.innerHTML=s&&s.refresh?`<p class="sub">✅ Terhubung${s.atlet?' sebagai <b>'+esc(s.atlet)+'</b>':''}. Lari masuk otomatis setiap aplikasi dibuka.<br>Sinkron terakhir: ${s.sinkron?new Date(s.sinkron).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'belum'}</p>
     <div class="row"><button class="btn stSync" onclick="stravaSinkron(true)">🔄 Sinkron sekarang</button><button class="btn ghost" onclick="stravaPutus()">Putuskan</button></div>`
     :`<p class="sub">Hubungkan Strava supaya lari otomatis masuk.</p><div class="row"><button class="btn" onclick="stravaHubungkan()">Hubungkan Strava</button></div>`;
+}
+
+
+/* ---------- Catatan titipan 19 Nov 2026 (sekali jalan, hanya akun yang terhubung ke Strava pemilik) ---------- */
+const TITIPAN_ID='titipan20261119';
+async function catatTitipan(){
+  if(TAMU||!USER||!stravaInfo()||(P.target&&P.target[TITIPAN_ID]))return;
+  const LARI=[
+    {tanggal:'2026-11-14',km:12,menit:86,catatan:'Long run 05.44–07.10, pace rata-rata 7:10/km. Tidak direkam Strava, jarak dari rute yang digambar.'},
+    {tanggal:'2026-11-18',km:5.2,menit:29.9,catatan:'Interval 6 x 400 m: 1:40.79, 1:35.37, 1:32.95, 1:32.83, 1:36.45, 1:34.83. Rata-rata 1:35.54 per 400 m (sekitar 3:59/km), tercepat 1:32.83. Pemanasan 1,6 km pace 7:15/km, pendinginan 1,2 km. Hujan, tidak direkam Strava. Waktu total perkiraan (pendinginan dihitung pace 7:15/km).'}];
+  try{
+    for(const r of LARI){
+      const ada=D.lari.find(x=>x.tanggal===r.tanggal&&Math.abs(Number(x.km)-r.km)<=Math.max(.5,r.km*.15));
+      if(ada){if(String(ada.catatan||'').includes(r.catatan))continue;
+        const upd={catatan:[ada.catatan,r.catatan].filter(Boolean).join(' · ')};if(!ada.strava_id){upd.km=r.km;upd.menit=r.menit}
+        const {error}=await db.from('lari').update(upd).eq('id',ada.id);if(error)throw error}
+      else{const {error}=await db.from('lari').insert({user_id:USER.id,...r,sumber:'manual'});if(error)throw error}
+    }
+    const prog={...program()},tambah=(tg,x)=>{const a=[...(prog[tg]||[])];if(!a.some(y=>y.j===x.j))a.push(x);prog[tg]=a};
+    tambah('2026-11-14',{w:'Pagi',j:'Lari',d:'Long run 12 km'});
+    tambah('2026-11-17',{w:'-',j:'Kekuatan',d:'Upper body + core'});
+    tambah('2026-11-18',{w:'-',j:'Lari',d:'Interval 6 x 400 m, pemanasan 1,6 km, pendinginan 1,2 km'});
+    await simpanTarget({program:prog});
+    const k=sesiTgl('2026-11-17').find(x=>x.j==='Kekuatan');
+    if(k&&!D.misi.some(m=>m.misi_id===k.id)){const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:'2026-11-17',misi_id:k.id,poin:10});if(error&&error.code!=='23505')throw error}
+    await simpanTarget({[TITIPAN_ID]:true});
+    await refresh();toast('Latihan 14, 17, dan 18 November sudah dicatat ✓');
+  }catch(e){console.warn('titipan',e)}
 }
 
 /* ---------- Tampilan ---------- */
