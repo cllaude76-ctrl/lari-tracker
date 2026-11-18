@@ -580,12 +580,12 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
   <section class="tab" id="tab-hari">
     <h2 class="judul" id="hTgl">Hari ini</h2>
     <div id="hSesi"></div>
-    <section class="card kmw"><span>Total lari minggu ini</span><b id="kmMg">0 km</b><small id="kmMgS"></small></section>
   </section>
 
   <!-- RIWAYAT -->
   <section class="tab" id="tab-riw">
     <h2 class="judul">Riwayat</h2>
+    <section class="card kmw"><span>Total lari minggu ini</span><b id="kmMg">0 km</b><small id="kmMgS"></small></section>
     <section class="card"><h2>📈 Grafik naik turun</h2><div class="opts gpil" id="gPil"></div><div id="gBox"></div></section>
     <p class="sub">Terbaru di atas. Hari yang lewat masih bisa diisi sampai 3 hari ke belakang dan tetap dihitung tuntas.</p>
     <div class="row" style="margin:0 0 14px"><button class="btn" onclick="formLari()">+ Catat lari manual</button></div>
@@ -1883,7 +1883,9 @@ function renderHari(){
   const ekstra=lariTgl(t0).slice(ss.filter(s=>s.j==='Lari').length);
   h+=ekstra.map(r=>`<div class="ses done"><div class="ses-h"><span class="ses-ik">🏃</span><div><small>Di luar program</small><b>Lari</b></div></div>${infoLari(r)}</div>`).join('');
   $('hSesi').innerHTML=h;
-  const ws=wkStart(t0),km=D.lari.filter(r=>r.tanggal>=ws&&r.tanggal<=t0&&!dobel(r)).reduce((a,r)=>a+Number(r.km),0);
+}
+function renderKmMinggu(){
+  const t0=today(),ws=wkStart(t0),km=D.lari.filter(r=>r.tanggal>=ws&&r.tanggal<=t0&&!dobel(r)).reduce((a,r)=>a+Number(r.km),0);
   $('kmMg').textContent=fmtKm(km)+' km';$('kmMgS').textContent=fmtPendek(ws)+' sampai '+fmtPendek(addDays(ws,6));
 }
 
@@ -2189,7 +2191,7 @@ function render(){
   if(!USER)return;
   const left=P.tgl_tes?diffDays(today(),P.tgl_tes):null;
   $('cdn').textContent=left!=null&&left>0?'SKD '+left+' hari lagi':'RunUp';
-  if(TAB==='hari')renderHari();else if(TAB==='riw'){renderGrafik();renderRiwayat()}else if(TAB==='skd')renderSkd();else renderPro();
+  if(TAB==='hari')renderHari();else if(TAB==='riw'){renderKmMinggu();renderGrafik();renderRiwayat()}else if(TAB==='skd')renderSkd();else renderPro();
 }
 function goTab(t){
   if(!$('tab-'+t))t='hari';TAB=t;try{localStorage.setItem('tab2',t)}catch(e){}
