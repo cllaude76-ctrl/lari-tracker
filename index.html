@@ -118,7 +118,7 @@ table.t{width:100%;border-collapse:collapse;font-size:13px}table.t td,table.t th
 .cal .dh{text-align:center;font-size:11px;color:var(--mut);font-weight:600;padding-bottom:2px}
 .cd{aspect-ratio:1;border-radius:12px;background:var(--ice);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:.2s}
 .cd small{font-size:10px;line-height:1;min-height:10px}
-.cd.g{background:#D3F4E4;color:#0B7A4B}.cd.y{background:#FFF1C9;color:#8A6100}.cd.r{background:#FFE0E0;color:#B3261E}.cd.fu{background:#F5F8FD;color:#8C9DBA}.cd.out{opacity:.4}
+.cd.g{background:#D3F4E4;color:#0B7A4B}.cd.y{background:#FFF1C9;color:#8A6100}.cd.r{background:#FFE0E0;color:#B3261E}.cd.fu{background:#F5F8FD;color:#8C9DBA}.cd.bl{background:#ECEEF2;color:#6B7280}.cd.out{opacity:.4}
 .cd.td{border-color:var(--blue)}.cd.sel{box-shadow:0 0 0 3px var(--sky)}
 .leg{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:12px;color:var(--mut)}
 .leg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:4px}
@@ -421,6 +421,11 @@ nav.bn{gap:0;padding:5px}nav.bn button{font-size:10.5px;padding:7px 0;min-width:
 ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
 :focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}#spark path{stroke-dashoffset:0}#spark .fill{opacity:1}}
+.qa{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.qa .btn{margin:0}
+.lt{display:inline-block;font-size:11px;font-weight:600;color:#8A6100;background:#FFF1C9;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.bl-t{font-size:11px;color:#6B7280;font-style:normal}.m.bl{background:#F4F5F7;border-color:#E3E6EB}.m.bl .ck{background:#E3E6EB;color:#6B7280}
+.kr{display:grid;gap:8px;margin:12px 0}.kr-r{display:grid;grid-template-columns:1fr 56px 14px 64px 40px;align-items:center;gap:6px;font-size:14px}
+.kr-r input{padding:8px;text-align:center}.kr-r i{font-style:normal;text-align:center}.kr-r small{color:#6B7280}
 </style>
 </head>
 <body>
@@ -531,14 +536,14 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
   <section class="tab" id="tab-hari">
     <section class="card"><div class="hd"><h2 id="pgT">Program menuju SKD</h2><span class="msg" id="pgS"></span></div>
       <div class="bar" style="margin-top:8px"><i id="pgB"></i></div><div id="mis"></div>
-      <div class="row"><button class="btn" onclick="tanyaCoach()">💬 Tanya coach</button><button class="btn ghost" onclick="formBola()">⚽ Catat futsal</button><button class="btn ghost" onclick="goTab('kal')">📅 Lihat jadwal minggu ini</button></div></section>
+      <div class="row"><button class="btn" onclick="tanyaCoach()">💬 Tanya coach</button><button class="btn ghost" onclick="formBola()">⚽ Catat futsal</button><button class="btn ghost" onclick="goTab('kal')">📅 Lihat jadwal minggu ini</button><button class="btn ghost stSync" id="stHome" style="display:none" onclick="stravaSinkron(true)">🔄 Sinkron Strava</button></div></section>
 
 
 
     <section class="card"><h2>Tugas lain hari ini</h2><div id="lainHari"></div></section>
 
     <details class="card"><summary><b>📝 Catat manual</b><br><small class="msg">Untuk lari atau tes di luar misi. Latihan di dalam misi tercatat otomatis.</small></summary>
-    <div><h3 class="lbl">Lari di luar misi</h3><p class="sub">Untuk lari di luar misi. Lari dalam misi tercatat otomatis.</p>
+    <div><h3 class="lbl">Lari di luar misi</h3><p class="sub">Untuk lari yang tidak masuk lewat misi atau Strava. Pilih tanggal latihannya: sampai 3 hari ke belakang tetap dihitung tuntas, dengan label "diisi belakangan".</p>
       <div class="form">
         <div><label>Tanggal<input type="date" id="tgl"></label></div>
         <div><label>Jarak (km)<input type="number" step="0.01" id="km" placeholder="3"></label></div>
@@ -565,7 +570,7 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
     <section class="card">
       <div class="hd"><button class="btn ghost sm" onclick="calNav(-1)" aria-label="Bulan sebelumnya">‹</button><h2 id="calT"></h2><button class="btn ghost sm" onclick="calNav(1)" aria-label="Bulan berikutnya">›</button></div>
       <div class="cal" id="cal"></div>
-      <div class="leg"><span><i style="background:#D3F4E4"></i>3 misi tuntas</span><span><i style="background:#FFF1C9"></i>Sebagian</span><span><i style="background:#FFE0E0"></i>Kosong</span><span>⚽ Main bola</span><span>📝 Tes mingguan</span><span>💬 Ada alasan</span><span>🎯 Hari SKD</span></div>
+      <div class="leg"><span><i style="background:#D3F4E4"></i>3 misi tuntas</span><span><i style="background:#FFF1C9"></i>Sebagian</span><span><i style="background:#ECEEF2"></i>Belum dicatat</span><span><i style="background:#FFE0E0"></i>Kosong lewat 3 hari</span><span>⚽ Main bola</span><span>📝 Tes mingguan</span><span>💬 Ada alasan</span><span>🎯 Hari SKD</span></div>
       <div id="calD"></div></section>
   </section>
 
@@ -662,7 +667,10 @@ ul.g{margin:6px 0 0;padding-left:18px;line-height:1.65;font-size:14px}
         <div><label>Nama acara<input id="lbNm" placeholder="Fun run Bromo 35K"></label></div>
         <div><label>Target akhir 5 km (menit)<input type="number" step="0.5" id="t5k" placeholder="20"></label></div>
       </div><div id="lbInfo"></div>
+      <p class="msg" id="suBest"></p>
       <div class="row"><button class="btn" onclick="simpanLomba()">Simpan</button><span class="msg" id="mlb"></span></div></section>
+    <section class="card" id="stCard"><h2>🔗 Strava</h2><div id="stBox"></div></section>
+    <section class="card"><h2>🔔 Pengingat jam 20:00</h2><div id="ingBox"></div></section>
     <section class="card"><h2>Target dan tanggal tes</h2><p class="sub">Angka bawaan adalah perkiraan umum tes kedinasan. Sesuaikan saat pengumuman resmi keluar.</p>
       <div class="form">
         <div><label>Tanggal SKD<input type="date" id="pTes"></label></div>
@@ -871,7 +879,7 @@ async function refresh(){
   render();
   setTimeout(()=>{if(typeof pasangTargetBaru==='function')pasangTargetBaru().catch(()=>{})},0);
 }
-async function load(){try{await refresh()}catch(e){toast(e.message)}}
+async function load(){try{await refresh();setelahMuat()}catch(e){toast(e.message)}}
 
 /* ---------- Target ---------- */
 const TG_DEF={pushup:50,situp:50,pullup:20,lari12:3200,shuttle:18,twk:65,tiu:80,tkp:166,skd:430};
@@ -882,7 +890,7 @@ function AW(){return (P.target&&P.target.awal)||{}}
 function best(j){const v=D.latihan.filter(l=>l.jenis===j).map(l=>l.nilai);if(!v.length)return null;return j==='shuttle'?Math.min(...v):Math.max(...v)}
 function latest(j){const v=D.latihan.filter(l=>l.jenis===j);return v.length?v[v.length-1].nilai:null}
 function maxNow(j){
-  const t=D.latihan.filter(l=>l.jenis===j&&l.catatan==='Tes mingguan');if(t.length)return t[t.length-1].nilai;
+  const t=D.latihan.filter(l=>l.jenis===j&&(l.catatan==='Tes mingguan'||l.catatan===TES_SITUP));if(t.length)return t[t.length-1].nilai;
   const a=Number(AW()[j]);if(a>0)return a;
   const b=best(j);return b?Math.min(b,AW_DEF[j]*3):AW_DEF[j];
 }
@@ -1016,7 +1024,7 @@ function lomba(){const l=(P.target&&P.target.lomba)||{};return {tanggal:l.tangga
 // progres 4 minggu sebelum minggu lomba (istirahat interval: jalan atau jogging pelan)
 const PROG4={
   1:{iv:{n:6,d:400,t:'1:35',rest:90},tempo:{m:15,pace:'5:00'},lr:12},
-  2:{iv:{n:8,d:400,t:'1:33',rest:90},tempo:{m:20,pace:'4:50'},lr:15},
+  2:{iv:{n:8,d:400,t:'1:33',rest:90,selisih:3},tempo:{m:20,pace:'4:50'},lr:15},
   3:{iv:{n:5,d:800,t:'3:15',rest:90},tempo:{m:20,pace:'4:40'},lr:18},
   4:{iv:{n:4,d:1000,t:'4:00',rest:120},tempo:{m:20,pace:'4:30'},lr:12,dua:true}};
 // setelah lomba: blok 5 km (saran coach, berulang tiap 4 minggu)
@@ -1064,9 +1072,9 @@ function planBaru(day,tg,dow,o){
   const interval=iv=>{if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda (pengganti interval)',teks:'Telapak kaki sedang nyeri, jadi interval diganti sepeda 30 menit.',sesi:sepeda(30)};
     const n=pendek?Math.max(2,Math.round(iv.n*.6)):iv.n,jarak=iv.d>=1000?(iv.d/1000)+' km':iv.d+' m',ts=mmssN(iv.t),istir=iv.rest>=120?'2 menit':'90 detik';
     const s=[pem,T_('Jogging pemanasan 10 menit',600,'Pelan, siapkan kaki untuk lari cepat.',true)];
-    for(let i=1;i<=n;i++){s.push(T_(`Lari ${jarak}, ulangan ${i} dari ${n} (target ${iv.t})`,ts+20,`Target ${iv.t}. Kencang tapi terkontrol, jaga kecepatan sama tiap ulangan. Tekan Selesai saat sampai.`,true));if(i<n)s.push(jedaJalan(iv.rest))}
+    for(let i=1;i<=n;i++){s.push(T_(`Lari ${jarak}, ulangan ${i} dari ${n} (target ${iv.t})`,ts+20,`Target ${iv.t}. Kencang tapi terkontrol, jaga kecepatan sama tiap ulangan${iv.selisih?' (selisih maksimal '+iv.selisih+' detik)':''}. Tekan Selesai saat sampai.`,true));if(i<n)s.push(jedaJalan(iv.rest))}
     s.push(T_('Jogging pendinginan 10 menit',600,'Pelan sekali.',true),pend);
-    return {tipe:'lari',kode:2,berat:true,judul:`Interval ${n} x ${jarak}`,teks:`Sesi berat. Interval ${n} x ${jarak} @${iv.t}, istirahat ${istir} jalan atau jogging pelan. Tidak ada sesi lain hari ini.`,sesi:s}};
+    return {tipe:'lari',kode:2,berat:true,judul:`Interval ${n} x ${jarak}`,teks:`Sesi berat. Interval ${n} x ${jarak} @${iv.t}, istirahat ${istir} jalan atau jogging pelan. Tidak ada sesi lain hari ini.${iv.selisih?' Selisih waktu antar-repetisi maksimal '+iv.selisih+' detik.':''}`,sesi:s}};
   const tempo=t=>{if(futsalMinggu(tg)){const j=jog(30,'Tempo diganti jogging santai karena minggu ini kamu sudah main futsal atau bola.');j.judul+=' (pengganti tempo)';return j}
     if(kaki)return {tipe:'lari',kode:8,judul:'Sepeda (pengganti tempo)',teks:'Telapak kaki sedang nyeri, jadi tempo diganti sepeda 30 menit.',sesi:sepeda(30)};
     const m=mnt(t.m);
@@ -1084,18 +1092,30 @@ function planBaru(day,tg,dow,o){
   const pullTks=n=>{const r=maxNow('pullup')-2;return r>=1?`pull up ${n} x ${rr(r)}`:`pull up negatif ${n} x 3`};
   const plank=(n,sec,nama)=>{const a=[];for(let i=1;i<=n;i++){a.push(T_(`${nama} ${i} dari ${n}`,sec,'Perut dan bokong dikencangkan, badan lurus.'));if(i<n)a.push(Z_(30))}return a};
   const plankSamping=(n,sec)=>{const a=[];for(let i=1;i<=n;i++){a.push(T_(`Plank samping kanan ${i} dari ${n}`,sec,'Pinggul jangan turun.'),T_(`Plank samping kiri ${i} dari ${n}`,sec,''));if(i<n)a.push(Z_(30))}return a};
-  const fbA=()=>({tipe:'kekuatan',kode:3,judul:'Full Body A',teks:`Upper: ${pullTks(nS(5))} (maksimal dikurangi 2), push up ${nS(4)} x ${rr(25)}, dips ${nS(3)} x ${rr(12)}. Kaki: squat ${nS(3)} x ${rr(15)}, lunge ${nS(3)} x ${rr(12)} per kaki, step up ${nS(3)} x ${rr(12)} per kaki, calf raise ${nS(3)} x ${rr(20)}, single-leg deadlift ${nS(3)} x ${rr(10)} per kaki. Core: sit up ${nS(4)} x ${rr(25)}, plank ${nS(3)} x 45 detik.`,
-    sesi:[pem].concat(pullSet(nS(5)),[Z_(90)],sets_('Push up',nS(4),rr(25),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',nS(3),rr(12),60,'Pakai kursi yang kokoh. Siku ditekuk sampai 90 derajat.'),[Z_(90)],
+  const fbA=()=>({tipe:'kekuatan',kode:3,judul:'Full Body A',teks:`${tesSitupTks(tg)}Upper: ${pullTks(nS(5))} (maksimal dikurangi 2), push up ${nS(4)} x ${rr(25)}, dips ${nS(3)} x ${rr(12)}. Kaki: squat ${nS(3)} x ${rr(15)}, lunge ${nS(3)} x ${rr(12)} per kaki, step up ${nS(3)} x ${rr(12)} per kaki, calf raise ${nS(3)} x ${rr(20)}, single-leg deadlift ${nS(3)} x ${rr(10)} per kaki. Core: sit up ${nS(4)} x ${rr(25)}, plank ${nS(3)} x 45 detik.`,
+    sesi:[pem].concat(tesSitup(tg),pullSet(nS(5)),[Z_(90)],sets_('Push up',nS(4),rr(25),60,'Badan lurus seperti papan, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',nS(3),rr(12),60,'Pakai kursi yang kokoh. Siku ditekuk sampai 90 derajat.'),[Z_(90)],
       sets_('Squat',nS(3),rr(15),60,'Lutut searah jari kaki, punggung tegak.'),[Z_(60)],sets_('Lunge (per kaki)',nS(3),rr(12),60,'Lutut belakang hampir menyentuh lantai.'),[Z_(60)],
       sets_('Step up di bangku atau tangga (per kaki)',nS(3),rr(12),60,'Dorong dengan tumit kaki yang naik.'),[Z_(60)],sets_('Calf raise',nS(3),rr(20),45,'Naik 2 detik, turun 3 detik. Bagus untuk telapak kaki dan tanjakan.'),[Z_(45)],
       sets_('Single-leg deadlift (per kaki)',nS(3),rr(10),60,'Punggung lurus, pinggul ke belakang. Pegang dinding kalau goyah.'),[Z_(60)],
       sets_('Sit up',nS(4),rr(25),60,'Jangan menarik leher dengan tangan.'),[Z_(45)],plank(nS(3),45,'Plank'),[pend])});
-  const fbB=ringan=>{const n=k=>ringan?2:nS(k);return {tipe:'kekuatan',kode:1,judul:'Full Body B'+(ringan?' ringan':''),teks:`Upper: ${pullTks(n(4))}, push up ${n(3)} x ${rr(ringan?20:30)}, dips ${n(3)} x ${rr(ringan?8:12)}. Core: sit up ${n(3)} x ${rr(ringan?20:30)}, plank samping ${n(3)} x 30 detik per sisi. Tanpa latihan kaki.`,
-    sesi:[pem].concat(pullSet(n(4)),[Z_(90)],sets_('Push up',n(3),rr(ringan?20:30),60,'Badan lurus, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',n(3),rr(ringan?8:12),60,'Pakai kursi yang kokoh.'),[Z_(90)],
+  const fbB=ringan=>{const n=k=>ringan?2:nS(k);return {tipe:'kekuatan',kode:1,judul:'Full Body B'+(ringan?' ringan':''),teks:`${tesSitupTks(tg)}Upper: ${pullTks(n(4))}, push up ${n(3)} x ${rr(ringan?20:30)}, dips ${n(3)} x ${rr(ringan?8:12)}. Core: sit up ${n(3)} x ${rr(ringan?20:30)}, plank samping ${n(3)} x 30 detik per sisi. Tanpa latihan kaki.`,
+    sesi:[pem].concat(tesSitup(tg),pullSet(n(4)),[Z_(90)],sets_('Push up',n(3),rr(ringan?20:30),60,'Badan lurus, dada turun sampai sekepal dari lantai.'),[Z_(60)],sets_('Dips di kursi atau bangku',n(3),rr(ringan?8:12),60,'Pakai kursi yang kokoh.'),[Z_(90)],
       sets_('Sit up',n(3),rr(ringan?20:30),60,'Jangan menarik leher dengan tangan.'),[Z_(45)],plankSamping(n(3),30),[pend])}};
   const istirahat=(judul,teks,jalan)=>({tipe:'istirahat',kode:7,judul,teks,sesi:jalan?[T_('Jalan santai 30 menit (opsional)',1800,'Boleh juga istirahat total. Tekan Selesai kapan saja.',true)]:[T_('Istirahat total hari ini. Tekan Selesai untuk mencentang.',5,'Tidur cukup, makan bergizi, minum air yang banyak.',true)]});
   const futsal=()=>({tipe:'futsal',kode:6,judul:'Futsal atau istirahat',teks:'Main futsal atau bola (catat lewat tombol ⚽ setelah main), atau istirahat. Kalau main futsal, tempo hari Jumat otomatis jadi jogging santai.',
     sesi:[T_('Tidak main futsal? Istirahat atau jalan santai. Tekan Selesai untuk mencentang.',5,'Kalau main futsal, pakai tombol ⚽ Catat futsal saja.',true)]});
+  const jogPelan=()=>{if(kaki)return jog(20);
+    return {tipe:'lari',kode:5,judul:'Jogging santai 20–25 menit',teks:'Jogging santai 20–25 menit, pace 7:00/km atau lebih lambat. Pelan sekali, ini hari pemulihan. Setelah itu lanjut latihan kaki ringan.',
+      sesi:[T_('Jalan cepat 3 menit',180,'Pemanasan ringan.'),T_('Jogging santai 20–25 menit (pace 7:00/km atau lebih lambat)',mnt(25)*60,'Pelan sekali. Boleh tekan Selesai setelah 20 menit.',true),I_('lari','Berapa km yang kamu tempuh?')]}};
+  const kakiRingan=()=>({tipe:'kekuatan',kode:4,lanjut:true,judul:'Latihan kaki ringan',teks:`Squat 2 x ${rr(15)}, lunge 2 x ${rr(10)} per kaki, step up 2 x ${rr(10)} per kaki, calf raise 2 x ${rr(20)}, single-leg deadlift 2 x ${rr(8)} per kaki, glute bridge 2 x ${rr(15)}. Ringan saja.`,
+    sesi:[].concat(sets_('Squat',2,rr(15),45,'Lutut searah jari kaki, punggung tegak.'),[Z_(45)],sets_('Lunge (per kaki)',2,rr(10),45,'Lutut belakang hampir menyentuh lantai.'),[Z_(45)],
+      sets_('Step up (per kaki)',2,rr(10),45,'Dorong dengan tumit kaki yang naik.'),[Z_(45)],sets_('Calf raise',2,rr(20),30,'Naik 2 detik, turun 3 detik.'),[Z_(30)],
+      sets_('Single-leg deadlift (per kaki)',2,rr(8),45,'Punggung lurus. Pegang dinding kalau goyah.'),[Z_(45)],sets_('Glute bridge',2,rr(15),45,'Angkat pinggul, kencangkan bokong 1 detik di atas.'),[pend])});
+  const futsalDipilih=()=>({tipe:'futsal',kode:6,judul:'Futsal',teks:'Hari ini kamu main futsal, jadi jogging dan latihan kaki Kamis tidak perlu (pilih salah satu saja).',
+    sesi:[T_('Futsal sudah dicatat. Tekan Selesai.',5,'Tempo Jumat otomatis jadi jogging santai.',true)]});
+  const tesLima=(t5tg,ganti)=>{const T5=tahap5k(t5tg),tm=fmtMnt(T5.menit);return {tipe:'tes',kode:5,berat:true,judul:(ganti?'Tes 5 km sekuat tenaga':'Tes lari 5 km')+' (target '+tm+')',teks:`${ganti?'Tempo hari ini diganti tes 5 km sekuat tenaga. ':''}Tes 5 km di jalan datar. ${T5.nama}: di bawah ${tm}. Jogging 10 menit dulu, lalu lari 5 km secepat yang kamu bisa. Ukur jarak 5 km yang pasti (lintasan atau rute yang sudah diukur), jangan hanya mengandalkan GPS HP.`,
+    sesi:[pem,T_('Jogging pemanasan 10 menit',600,'',true),T_('Tes 5 km, sekuat tenaga',Math.round(T5.menit*60),'Target di bawah '+tm+'. Tekan Selesai tepat saat sampai.',true),I_('lari','Berapa km yang kamu tempuh? (isi 5)'),pend]}};
+  const ivGeser=(iv,dari)=>{const x=interval(iv);return {...x,judul:x.judul+' (digeser karena hujan)',teks:'Digeser dari '+dari+' karena hujan. '+x.teks}};
   // ---- susun hari
   let pagi=null,sore=null;
   const G=(J.ganti||{})[tg];
@@ -1127,12 +1147,12 @@ function planBaru(day,tg,dow,o){
     pagi=dow===1?jog(20,'Minggu pemulihan setelah Bromo.'):dow===3?jog(25,'Minggu pemulihan: tanpa interval.'):dow===5?fbB(true):dow===6?jog(40,'Lari santai, tanpa target kecepatan.'):istirahat('Istirahat','Minggu pemulihan setelah lomba. Jalan santai boleh.',dow!==0);
   }
   else{ // blok persiapan lomba atau blok 5 km
-    const p=W.p;
+    const p=W.p,hj=hujanMinggu(tg);
     if(dow===1){pagi=jog(30);sore=fbA()}
     else if(dow===2)pagi=istirahat('Istirahat atau jalan santai','Istirahat, atau jalan santai 30 menit.',true);
-    else if(dow===3)pagi=interval(p.iv);
-    else if(dow===4)pagi=futsal();
-    else if(dow===5){pagi=p.tes5k||p.tes12?jog(30,'Besok tes lari, jadi tempo diganti jogging santai supaya kaki segar.'):tempo(p.tempo);sore=fbB()}
+    else if(dow===3)pagi=hj?istirahat('Interval batal karena hujan','Interval digeser ke besok. Hari ini istirahat, atau jalan santai di dalam rumah.',true):interval(p.iv);
+    else if(dow===4){if(hj===1)pagi=ivGeser(p.iv,'Rabu');else if(hj===2)pagi=istirahat('Interval digeser lagi karena hujan','Interval pindah ke Jumat. Hari ini istirahat.',true);else if(futsalHari(tg))pagi=futsalDipilih();else{pagi=jogPelan();sore=kakiRingan()}}
+    else if(dow===5){pagi=hj===2?ivGeser(p.iv,'Kamis'):hj===1?jog(30,'Tempo minggu ini diganti jogging santai 30 menit karena interval digeser (hujan). Interval dan tempo tidak boleh di dua hari berturut-turut.'):tes5kKhusus(tg)?tesLima(tg,true):p.tes5k||p.tes12?jog(30,'Besok tes lari, jadi tempo diganti jogging santai supaya kaki segar.'):tempo(p.tempo);sore=fbB()}
     else if(dow===6)pagi=p.tes12?(()=>{const T12=tahap12(tg);return {tipe:'tes',kode:5,judul:'Tes lari 12 menit (target '+T12.m+' m)',teks:`Lari 12 menit sejauh mungkin di lintasan atau rute yang jaraknya pasti. ${T12.nama}: ${T12.m} m (pace ${fmtMnt(12/(T12.m/1000))}/km). Jangan hanya mengandalkan GPS HP.`,
         sesi:[pem,T_('Jogging pemanasan 10 menit',600,'',true),T_('Lari 12 menit sejauh mungkin',720,'Mulai stabil, percepat di 3 menit terakhir.'),I_('lari12','Berapa meter yang kamu tempuh dalam 12 menit?'),pend]}})()
       :p.tes5k?(()=>{const T5=tahap5k(tg),tm=fmtMnt(T5.menit);return {tipe:'tes',kode:5,judul:'Tes lari 5 km (target '+tm+')',teks:`Tes 5 km di jalan datar. ${T5.nama}: di bawah ${tm}. Jogging 10 menit dulu, lalu lari 5 km secepat yang kamu bisa. Ukur jarak 5 km yang pasti (lintasan atau rute yang sudah diukur), jangan hanya mengandalkan GPS HP.`,
@@ -1144,10 +1164,10 @@ function planBaru(day,tg,dow,o){
   const t0=tg,tSkd=left<=1?'Guru SKD: baca catatan ringan saja, jangan belajar materi baru.':'Guru SKD: 20 soal dari topik terlemahmu, dipilih otomatis dari statistik jawabanmu.';
   const ps=[T_('Chin tuck: tarik dagu lurus ke belakang, tahan 5 detik, ulangi 10 kali',60,'Pandangan lurus ke depan, jangan menunduk.'),T_('Putar bahu ke belakang pelan-pelan',45,'Bahu turun, jauhkan dari telinga.'),
     T_('Tarik jari kaki kanan ke arah tulang kering, tahan',30,'Peregangan telapak kaki.'),T_('Tarik jari kaki kiri, tahan',30,''),T_('Peregangan betis di dinding, kanan lalu kiri',60,'Tumit tetap menempel lantai.')];
-  const out=[{...pagi,id:day+'-f',menit:sesiMenit(pagi.sesi),tg:t0,dow,sesiKe:sore?'pagi':null,minggu:W.label},
+  const out=[{...pagi,id:day+'-f',menit:sesiMenit(pagi.sesi),tg:t0,dow,sesiKe:sore?(sore.lanjut?'jog':'pagi'):null,minggu:W.label},
     {id:day+'-s',teks:tSkd,sesi:null,tipe:'skd',tryout:false},
     {id:day+'-p',teks:'Peregangan leher dan telapak kaki 4 menit, minum air 2 liter, tidur minimal 7 jam.',sesi:ps,tipe:'pulih'}];
-  if(sore)out.push({...sore,id:day+'-f2',menit:sesiMenit(sore.sesi),tg:t0,dow,sesiKe:'sore'});
+  if(sore)out.push({...sore,id:day+'-f2',menit:sesiMenit(sore.sesi),tg:t0,dow,sesiKe:sore.lanjut?'lanjut':'sore'});
   return out;
 }
 const urutMisi=m=>/-f$/.test(m.id)?0:/-f2$/.test(m.id)?1:/-p$/.test(m.id)?2:3;
@@ -1196,7 +1216,7 @@ async function simpanLomba(){
   $('mlb').textContent='';await refresh();
   const L=blokKe(tg);toast(`Tersimpan. Minggu 4 sekarang ${fmtTgl(addDays(POLA_MULAI,(L-2)*7))}.`);
 }
-function renderLomba(){
+function renderLomba(){try{renderStrava();renderPengingat()}catch(e){}
   const l=lomba(),set=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v};
   set('lbTg',l.tanggal);set('lbNm',l.nama);set('t5k',(P.target&&P.target.lari5k)||20);
   const b=$('lbInfo');if(!b)return;
@@ -1211,7 +1231,7 @@ function renderLomba(){
 }
 
 const opsionalBaru=m=>m&&m.tg>=JADWAL_BARU&&(m.tipe==='istirahat'||m.tipe==='futsal');
-const cntDay=d=>['f','s','p'].filter(x=>DONE.has(d+'-'+x)||(x==='f'&&P.mulai&&addDays(P.mulai,d-1)>=JADWAL_BARU&&opsionalBaru(plan(d)[0]))).length;
+const cntDay=d=>{const baru=P.mulai&&addDays(P.mulai,d-1)>=JADWAL_BARU,pl=baru?plan(d):null;return ['f','s','p'].filter(x=>x!=='f'||!baru?DONE.has(d+'-'+x):pl.filter(sesiUtama).every(m=>DONE.has(m.id)||opsionalBaru(m))).length};
 const harianOf=t=>HMAP[t]||null;
 function nadiBase(){const t=today();return median(D.harian.filter(h=>h.nadi&&h.tanggal<t&&diffDays(h.tanggal,t)<=10).slice(-7).map(h=>h.nadi))}
 
@@ -1221,7 +1241,7 @@ function buildState(){
   let fct=1;const why=[];
   if(day>3&&day<=pi.total){const c=[day-1,day-2,day-3].map(cntDay);
     const baruH=t0>=JADWAL_BARU;
-    if(c.filter(x=>x===0).length>=2){if(!baruH)fct*=.8;why.push([baruH?'Beberapa hari terakhir kosong. Kembali ke jadwal hari ini saja, jangan dikejar semuanya sekaligus.':'Beberapa hari terakhir kosong, jadi target hari ini turun 20%. Kerjakan semuanya, lalu kita naikkan lagi.',1])}
+    if(c.filter(x=>x===0).length>=2){if(!baruH)fct*=.8;why.push([baruH?'Beberapa hari terakhir belum tercatat. Kalau sudah latihan, catat di bagian "Belum dicatat" (masih bisa sampai 3 hari). Kalau memang terlewat, lanjut jadwal hari ini saja, jangan dikejar sekaligus.':'Beberapa hari terakhir kosong, jadi target hari ini turun 20%. Kerjakan semuanya, lalu kita naikkan lagi.',1])}
     else if(c.every(x=>x>=3)){if(!baruH)fct*=1.1;why.push([baruH?'3 hari terakhir tuntas. Pertahankan!':'3 hari terakhir tuntas. Target hari ini naik 10%.',0])}}
   let sehat=1;
   const hy=harianOf(addDays(t0,-1)),ht=harianOf(t0)||{};
@@ -1243,14 +1263,14 @@ function buildState(){
     +D.latihan.reduce((a,l)=>a+(l.jenis==='skd'?10:['twk','tiu','tkp'].includes(l.jenis)?0:5),0)
     +D.jawaban.filter(j=>j.skor>=5).length+D.checkin.filter(isBola).length*5;
   const lvl=Math.floor(Math.sqrt(pts/25))+1;
-  const days={};D.misi.forEach(r=>days[r.tanggal]=1);
-  let streak=0,t=days[t0]?t0:addDays(t0,-1);while(days[t]){streak++;t=addDays(t,-1)}
+  const days={};if(P.mulai)D.misi.forEach(r=>{const n=parseInt(r.misi_id,10);if(n>0)days[addDays(P.mulai,n-1)]=1});
+  let streak=0;for(let t=t0,i=0;i<400;i++,t=addDays(t,-1)){if(days[t])streak++;else if(diffDays(t,t0)<=GRACE)continue;else break}
   return {pi,day,missions,kejar,fct,why,bolaToday,kaki,points:pts,level:lvl,from:25*(lvl-1)*(lvl-1),next:25*lvl*lvl,streak,
           kemarin:day>1&&day-1<=pi.total?cntDay(day-1):-1};
 }
 function findMisi(id){return st.missions.concat(st.kejar).find(x=>x.id===id)}
 function runsAll(){
-  return D.lari.map(x=>{const km=Number(x.km),mn=Number(x.menit);return {tanggal:x.tanggal,km,menit:mn,pace:km?mn/km:0,speed:mn?km/(mn/60):0,catatan:x.catatan||''}})
+  return D.lari.filter(x=>!dobel(x)).map(x=>{const km=Number(x.km),mn=Number(x.menit);return {tanggal:x.tanggal,km,menit:mn,pace:km?mn/km:0,speed:mn?km/(mn/60):0,catatan:x.catatan||''}})
     .concat(D.latihan.filter(l=>l.jenis==='lari12'&&l.nilai>0).map(l=>({tanggal:l.tanggal,km:l.nilai/1000,menit:12,pace:12/(l.nilai/1000),speed:l.nilai/200,catatan:'Lari 12 menit'})))
     .sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
 }
@@ -1278,8 +1298,10 @@ async function simpanHarian(tg,fields){
 }
 async function simpan(){
   $('bsv').disabled=true;$('m1').textContent='Menyimpan...';
-  try{const ct=$('cat').value;await addRun({tanggal:$('tgl').value,km:$('km').value,menit:$('mnt').value,catatan:ct});
-    ['km','mnt','cat'].forEach(i=>$(i).value='');$('m1').textContent='';await refresh();if(!peringatanBahaya(ct))toast('Lari tersimpan ✓')}
+  try{const ct=$('cat').value,tg=$('tgl').value,r={tanggal:tg,km:$('km').value,menit:$('mnt').value};
+    if(tg>today())throw new Error('Tanggal latihan tidak boleh lebih dari hari ini.');
+    await addRun({...r,catatan:ct});let t={};try{t=await tandaiSesi(tg,'lari')}catch(e){}
+    ['km','mnt','cat'].forEach(i=>$(i).value='');$('tgl').value=today();$('m1').textContent='';await refresh();if(!peringatanBahaya(ct))pesanLari(t,r)}
   catch(e){$('m1').textContent=e.message}
   $('bsv').disabled=false;
 }
@@ -1307,7 +1329,7 @@ async function hapus(){
 function render(){
   st=buildState();
   $('upd').style.display=NEED?'block':'none';
-  renderHero();renderTab();cekAlasan();
+  renderHero();renderTab();cekAlasan();simpanStatus();
 }
 function renderLainHari(){
   const box=$('lainHari');if(!box)return;let h='';
@@ -1352,13 +1374,14 @@ function renderHero(){
 
 /* ---------- Hari ini ---------- */
 function renderHari(){
-  if(!$('tgl').value)$('tgl').value=today();if(!$('lt').value)$('lt').value=today();
+  if(!$('tgl').value)$('tgl').value=today();if(!$('lt').value)$('lt').value=today();$('tgl').max=today();$('lt').max=today();
+  const sh=$('stHome');if(sh)sh.style.display=stravaInfo()?'':'none';
   renderMisi();renderLainHari();renderRiwayat();
 }
 const NAMA={nadi:['Detak jantung','per menit'],pushup:['Push up','kali'],situp:['Sit up','kali'],pullup:['Pull up','kali'],lari12:['Lari 12 menit','m'],shuttle:['Shuttle run','detik'],sepeda:['Sepeda','km'],renang:['Renang','m'],twk:['TWK','poin'],tiu:['TIU','poin'],tkp:['TKP','poin'],skd:['SKD total','poin']};
 function renderRiwayat(){
   const a=D.latihan.filter(l=>l.jenis!=='nadi').map(l=>({t:'latihan',id:l.id,tg:l.tanggal,txt:(NAMA[l.jenis]||[l.jenis,''])[0]+' '+String(l.nilai).replace('.',',')+' '+(NAMA[l.jenis]||['',''])[1],c:l.catatan}))
-    .concat(D.lari.map(r=>({t:'lari',id:r.id,tg:r.tanggal,txt:'Lari '+String(r.km).replace('.',',')+' km, '+String(r.menit).replace('.',',')+' menit',c:r.catatan})))
+    .concat(D.lari.map(r=>({t:'lari',id:r.id,tg:r.tanggal,txt:'Lari '+String(r.km).replace('.',',')+' km, '+String(r.menit).replace('.',',')+' menit'+(r.strava_id?' · Strava':'')+(dobel(r)?' (sama dengan data Strava, tidak dihitung dua kali)':''),c:r.catatan})))
     .sort((x,y)=>y.tg.localeCompare(x.tg)||y.id-x.id).slice(0,12);
   $('riw').innerHTML=a.length?'<h3 class="lbl" style="margin-top:0">Catatan terakhir. Hapus kalau ada yang salah.</h3>'+a.map(x=>`<div class="stk"><span>${esc(x.txt)}<br><small class="msg">${fmtTgl(x.tg)}${x.c?', '+esc(x.c):''}</small></span><button class="btn ghost sm" id="hp-${x.t}-${x.id}" onclick="hapusCatatan('${x.t}',${Number(x.id)})">Hapus</button></div>`).join(''):'';
 }
@@ -1372,14 +1395,14 @@ function banner(){
   const bh=deteksiBahaya();
   let h=st.why.map(w=>`<div class="cb ${w[1]?'':'info'}">${esc(w[0])}</div>`).join('');
   const k=st.kemarin;
-  if(k>=0)h=(k>=3?'<div class="cb ok">Kemarin tuntas 3 dari 3. Pertahankan, jangan kendor.</div>':'<div class="cb">Kemarin kamu cuma menyelesaikan '+k+' dari 3 misi. Itu bukan disiplin! Hari ini tidak ada alasan.</div>')+h;
-  return (bh?htmlBahaya(bh):'')+h;
+  if(k>=0)h=(k>=3?'<div class="cb ok">Kemarin tuntas 3 dari 3. Pertahankan, jangan kendor.</div>':(addDays(today(),-1)>=JADWAL_BARU?'':'<div class="cb">Kemarin kamu cuma menyelesaikan '+k+' dari 3 misi. Itu bukan disiplin! Hari ini tidak ada alasan.</div>'))+h;
+  return (bh?htmlBahaya(bh):'')+peringatanSantai()+h;
 }
 function misiRow(m){
   const bolaFis=m.done&&m.id.endsWith('-f')&&D.checkin.some(c=>isBola(c)&&diffDays(P.mulai,c.tanggal)+1===Number(m.id.split('-')[0]));
   const lab=m.done?(bolaFis?'⚽':'✓'):'▶ Mulai';
-  const tag=(m.judul?(m.sesiKe?(m.sesiKe==='pagi'?'🌅 Pagi: ':'🌇 Sore: '):'')+(m.ditukar?'🔄 ':'')+m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
-  return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':m.tipe==='skd'?`onclick="mulaiTugas()"`:`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
+  const tag=(m.judul?(m.sesiKe?({pagi:'🌅 Pagi: ',sore:'🌇 Sore: ',jog:'1️⃣ ',lanjut:'2️⃣ Lalu: '}[m.sesiKe]||''):'')+(m.ditukar?'🔄 ':'')+m.judul+(m.menit?', ±'+m.menit+' menit':''):{skd:'Guru SKD',pulih:'Pemulihan, ±7 menit'}[m.tipe])||'';
+  return `<div class="m ${m.done?'ok':''} ${m.kejar?'kj':''}" ${m.done?'':m.tipe==='skd'?`onclick="mulaiTugas()"`:`onclick="mulaiSesi('${m.id}')"`} role="button" tabindex="0"><span class="ck">✓</span><p><small>${tag}${m.kejar?', misi kejar':''}</small>${esc(m.teks)}${aksiMisi(m)}</p><b>${m.kejar&&!m.done?'+5':lab}</b></div>`;
 }
 function renderMisi(){
   const pi=st.pi,d=st.day,box=$('mis');
@@ -1394,6 +1417,7 @@ function renderMisi(){
   $('pgS').textContent=HARI[f?f.dow:0]+', '+(f&&f.minggu?f.minggu:'minggu ke-'+Math.ceil(d/7)+', fase '+fase(d,pi.total))+(st.streak?' · 🔥 '+st.streak+' hari':'');
   let h=banner()+st.missions.filter(m=>m.tipe!=='skd').sort((a,b)=>urutMisi(a)-urutMisi(b)).map(misiRow).join('');
   const kj=st.kejar.filter(m=>m.tipe!=='skd').sort((a,b)=>urutMisi(a)-urutMisi(b));
+  h+=htmlBelumDicatat();
   if(kj.length)h+='<p class="lbl" style="margin-top:16px">Kejar dari kemarin (setengah poin)</p>'+kj.map(misiRow).join('');
   if(st.bolaToday)h+='<div class="cb info">Hari ini kamu main bola. Lari diganti bola, tetapi latihan kekuatan tetap wajib.</div>';
   box.innerHTML=h;renderGuruHari();
@@ -1478,6 +1502,7 @@ async function gantiBola(row){
   const pi=prog(),dn=diffDays(P.mulai,row.tanggal)+1;if(dn<1||dn>pi.total)return 'Tercatat.';
   const ws=wkStart(row.tanggal),n=D.checkin.filter(c=>isBola(c)&&wkStart(c.tanggal)===ws).length+1;
   const m=plan(dn)[0];
+  if(row.tanggal>=JADWAL_BARU&&new Date(row.tanggal+'T12:00:00').getDay()===4&&m.kode!==2){if(DONE.has(dn+'-f'))return 'Tercatat.';if(!masihBisaIsi(row.tanggal))return 'Tercatat.';const r=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:dn+'-f',poin:10});return r.error&&r.error.code!=='23505'?r.error.message:'Kamis: kamu pilih futsal, jadi jogging dan latihan kaki tidak perlu. Tuntas ✓ Tempo Jumat diganti jogging santai 30 menit.'}
   if(row.tanggal>=JADWAL_BARU&&m.tipe!=='futsal'){const dw=new Date(row.tanggal+'T12:00:00').getDay();return 'Tercatat.'+(dw>=1&&dw<=4?' Karena kamu main futsal minggu ini, tempo hari Jumat otomatis diganti jogging santai 30 menit.':'')}
   if(m.tipe==='futsal'){if(DONE.has(dn+'-f'))return 'Tercatat.';if(diffDays(row.tanggal,today())>1)return 'Tercatat.';const r=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:dn+'-f',poin:10});return r.error&&r.error.code!=='23505'?r.error.message:'Jadwal futsal tuntas. +10 poin.'}
   if(m.tipe==='tes')return 'Tes mingguan tetap wajib. Kalau sudah terlalu capek, kerjakan besok lewat misi kejar.';
@@ -1546,15 +1571,15 @@ function dayInfo(s){
   if(s>t0){o.cls='fu';return o}
   const c=cntDay(dn),h=harianOf(s);o.c=c;
   if(h&&h.alasan&&c<3)o.ic+='💬';
-  o.cls=c>=3?'g':c>0?'y':(s===t0?'fu':'r');
+  o.cls=c>=3?'g':c>0?'y':s===t0?'fu':diffDays(s,t0)<=GRACE?'bl':'r';
   return o;
 }
 function kalStat(){
-  const pi=st.pi;if(!P.mulai)return {n:0,full:0,part:0,pct:0,cur:0,rekor:0,bola:D.checkin.filter(isBola).length};
-  const n=Math.max(0,Math.min(pi.day-1,pi.total));let full=0,part=0,run=0,rekor=0;
-  for(let d=1;d<=n;d++){const c=cntDay(d);if(c>=3){full++;run++;rekor=Math.max(rekor,run)}else{if(c>0)part++;run=0}}
-  let cur=0;const startD=cntDay(pi.day)>=3&&pi.day<=pi.total?pi.day:n;for(let d=startD;d>=1&&cntDay(d)>=3;d--)cur++;
-  if(cntDay(pi.day)>=3)rekor=Math.max(rekor,cur);
+  const pi=st.pi,t0=today();if(!P.mulai)return {n:0,full:0,part:0,pct:0,cur:0,rekor:0,bola:D.checkin.filter(isBola).length};
+  const n=Math.max(0,Math.min(pi.day-1,pi.total)),tgOf=d=>addDays(P.mulai,d-1),bisa=d=>diffDays(tgOf(d),t0)<=GRACE;let full=0,part=0,run=0,rekor=0;
+  for(let d=1;d<=n;d++){const c=cntDay(d);if(c>=3){full++;run++;rekor=Math.max(rekor,run)}else if(!bisa(d)){if(c>0)part++;run=0}}
+  let cur=0;for(let d=Math.min(pi.day,pi.total);d>=1;d--){if(cntDay(d)>=3)cur++;else if(bisa(d))continue;else break}
+  rekor=Math.max(rekor,cur);
   return {n,full,part,pct:n?Math.round(full/n*100):0,cur,rekor,bola:D.checkin.filter(isBola).length};
 }
 let JW=0;
@@ -1567,12 +1592,12 @@ function renderJadwal(){
   const baru=addDays(ws,6)>=JADWAL_BARU,ph=!baru&&dn0+3>=1&&dn0+3<=pi.total?fase(Math.max(1,dn0+3),pi.total):'';
   $('jdS').textContent=fmtTgl(ws)+' sampai '+fmtTgl(addDays(ws,6))+(baru?', '+infoMinggu(addDays(ws,ws<JADWAL_BARU?6:0)).label:ph?', minggu ke-'+mg+', fase '+ph:'');
   const DESK={Dasar:'Fase Dasar: membangun pondasi dan teknik. Beban ringan sampai sedang.',Bangun:'Fase Bangun: beban naik, interval lebih panjang.',Puncak:'Fase Puncak: intensitas tertinggi, mirip tes asli.',Pengurangan:'Fase Pengurangan: beban turun supaya tubuh segar di hari tes.'};
-  let h=ph?`<p class="sub" style="margin:0 0 8px">${DESK[ph]}</p>`:baru?'<p class="sub" style="margin:0 0 8px">Sesi berat hanya Rabu (interval) dan Jumat (tempo). Latihan pagi dan sore hanya Senin dan Jumat, jaraknya minimal 6 jam.</p>':'';
+  let h=ph?`<p class="sub" style="margin:0 0 8px">${DESK[ph]}</p>`:baru?'<p class="sub" style="margin:0 0 8px">Sesi berat hanya Rabu (interval) dan Jumat (tempo). Latihan pagi dan sore hanya Senin dan Jumat, jaraknya minimal 6 jam. Kamis: jogging santai lalu latihan kaki ringan, atau futsal (pilih salah satu). Kalau interval batal karena hujan, digeser ke besok.</p>':'';
   for(let i=0;i<7;i++){const tg=addDays(ws,i),dn=diffDays(P.mulai,tg)+1;
     if(dn<1||dn>pi.total){h+=`<div class="jd off"><b>${HARI[(i+1)%7]}</b><span>Di luar program</span></div>`;continue}
-    const pl=plan(dn,{kaki:st.kaki}),f=pl[0],f2=pl.find(x=>/-f2$/.test(x.id)),dn_=DONE.has(dn+'-f')&&(!f2||DONE.has(dn+'-f2')),lewat=tg<t0;
-    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${f.ditukar?'🔄 ':''}${f2?'🌅 '+esc(f.judul)+'<br>🌇 '+esc(f2.judul):esc(f.judul)}<small>±${f.menit+(f2?f2.menit:0)} menit${pl[1].tryout?', SKD: '+(pl[1].tryout==='penuh'?'tryout penuh':'tryout setengah'):', SKD: 20 soal'}</small></span><em>${dn_?'✅':lewat?'❌':tg===t0?'👉':''}</em></summary>
-      ${[f,f2].filter(Boolean).map(x=>`<p class="sub" style="margin:8px 0 4px">${f2?(x===f?'<b>Pagi:</b> ':'<b>Sore:</b> '):''}${esc(x.teks)}</p><ol class="jdl">${x.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol>`).join('')}</details>`}
+    const pl=plan(dn,{kaki:st.kaki}),f=pl[0],f2=pl.find(x=>/-f2$/.test(x.id)),dn_=tg>=JADWAL_BARU?pl.filter(sesiUtama).every(m=>DONE.has(m.id)||(tg<t0&&opsionalBaru(m))):DONE.has(dn+'-f')&&(!f2||DONE.has(dn+'-f2')),lewat=tg<t0;
+    h+=`<details class="jd ${tg===t0?'now':''}"><summary><b>${HARI[(i+1)%7]}<small>${fmtTgl(tg).split(', ')[1]||''}</small></b><span>${f.ditukar?'🔄 ':''}${f2?(f2.sesiKe==='lanjut'?'1️⃣ ':'🌅 ')+esc(f.judul)+'<br>'+(f2.sesiKe==='lanjut'?'2️⃣ ':'🌇 ')+esc(f2.judul):esc(f.judul)}<small>±${f.menit+(f2?f2.menit:0)} menit${pl[1].tryout?', SKD: '+(pl[1].tryout==='penuh'?'tryout penuh':'tryout setengah'):', SKD: 20 soal'}</small></span><em>${dn_?'✅'+(pl.some(m=>sesiUtama(m)&&belakangan(m.id))?'<small class="lt">diisi belakangan</small>':''):tg===t0?'👉':lewat&&diffDays(tg,t0)<=GRACE?'<small class="bl-t">Belum dicatat</small>':lewat?'❌':''}</em></summary>
+      ${[f,f2].filter(Boolean).map(x=>`<p class="sub" style="margin:8px 0 4px">${f2?(f2.sesiKe==='lanjut'?(x===f?'<b>1.</b> ':'<b>2. Lalu:</b> '):x===f?'<b>Pagi:</b> ':'<b>Sore:</b> '):''}${esc(x.teks)}</p><ol class="jdl">${x.sesi.filter(s=>s.k!=='rest'&&s.k!=='input').map(s=>`<li>${esc(s.t)}${s.k==='reps'?' ('+s.reps+'x)':s.k==='timer'&&s.sec>=60&&!s.bebas?' ('+Math.round(s.sec/60)+' menit)':''}</li>`).join('')}</ol>`).join('')}</details>`}
   box.innerHTML=h;
 }
 function renderKal(){
@@ -1593,12 +1618,13 @@ function renderKalDetail(){
   const s=CALSEL,box=$('calD');if(!s){box.innerHTML='<p class="msg" style="margin-top:12px">Ketuk sebuah tanggal untuk melihat misinya.</p>';return}
   const inf=dayInfo(s),pi=st.pi;let h=`<h3 style="margin:16px 0 6px;font-size:15px">${fmtTgl(s)}${inf.dn>=1&&inf.dn<=pi.total?', hari '+inf.dn:''}</h3>`;
   if(inf.dn>=1&&inf.dn<=pi.total){
-    h+=plan(inf.dn).map(m=>`<div class="stk"><span>${DONE.has(m.id)?'✅':s>today()?'⏳':'❌'} ${esc(m.teks)}</span></div>`).join('');
+    h+=plan(inf.dn).map(m=>`<div class="stk"><span>${DONE.has(m.id)?'✅':s>today()?'⏳':diffDays(s,today())<=GRACE?'⬜':'❌'} ${esc(m.teks)}${DONE.has(m.id)&&belakangan(m.id)?' <small class="lt">diisi belakangan</small>':!DONE.has(m.id)&&s<=today()&&diffDays(s,today())<=GRACE?' <small class="msg">Belum dicatat</small>':''}</span></div>`).join('');
   }else h+='<p class="msg">Di luar masa program.</p>';
   const hr=harianOf(s);
   if(hr){if(hr.alasan)h+=`<div class="cb info">Alasan: ${esc(hr.alasan)}${hr.catatan?', '+esc(hr.catatan):''}</div>`;
     if(hr.nadi||hr.energi)h+=`<p class="msg">Cek pagi: nadi ${hr.nadi||'-'}, energi ${hr.energi||'-'}/5, tidur ${hr.tidur||'-'} jam</p>`}
-  D.checkin.filter(c=>c.tanggal===s).forEach(c=>{h+=`<p class="msg">${isBola(c)?'⚽ '+(c.jenis==='futsal'?'Futsal':'Sepak bola'):'Check-in latihan'}: berat ${c.rpe}/10, ${c.menit||'-'} menit${c.nyeri?', nyeri '+esc(c.lokasi||'')+' '+c.nyeri+'/5':''}</p>`});
+  D.checkin.filter(c=>c.tanggal===s&&c.jenis==='kekuatan').forEach(c=>{h+='<p class="msg">🏋️ '+esc(c.catatan||'')+'</p>'});
+  D.checkin.filter(c=>c.tanggal===s&&c.jenis!=='kekuatan').forEach(c=>{h+=`<p class="msg">${isBola(c)?'⚽ '+(c.jenis==='futsal'?'Futsal':'Sepak bola'):'Check-in latihan'}: berat ${c.rpe}/10, ${c.menit||'-'} menit${c.nyeri?', nyeri '+esc(c.lokasi||'')+' '+c.nyeri+'/5':''}</p>`});
   if(s<=today()&&s>=addDays(today(),-1))h+=`<div class="row"><button class="btn ghost sm" onclick="formBola('${s}')">⚽ Catat main bola di tanggal ini</button></div>`;
   box.innerHTML=h;
 }
@@ -1696,7 +1722,7 @@ function ringkasan(){
     program:'Evaluasi konsistensi, beban latihan, dan hasil tes saya, lalu beri penyesuaian program untuk minggu depan.',
     skd:'Susun strategi belajar SKD untuk 7 hari ke depan berdasarkan skor dan statistik topik saya, fokus pada subtes dan topik terlemah.'}[mode];
   const b=j=>{const v=best(j);return v==null?'-':v};
-  const ci=D.checkin.filter(c=>diffDays(c.tanggal,t0)<=7).map(c=>`${c.tanggal} ${isBola(c)?c.jenis:'latihan'}: berat ${c.rpe}/10, ${c.menit||'-'} menit${c.medan?', '+c.medan:''}${c.cuaca?', '+c.cuaca:''}${c.nyeri?', nyeri '+(c.lokasi||'')+' '+c.nyeri+'/5':''}`).join('\n');
+  const ci=D.checkin.filter(c=>diffDays(c.tanggal,t0)<=7&&c.jenis!=='kekuatan').map(c=>`${c.tanggal} ${isBola(c)?c.jenis:'latihan'}: berat ${c.rpe}/10, ${c.menit||'-'} menit${c.medan?', '+c.medan:''}${c.cuaca?', '+c.cuaca:''}${c.nyeri?', nyeri '+(c.lokasi||'')+' '+c.nyeri+'/5':''}`).join('\n');
   const hr=D.harian.filter(h=>diffDays(h.tanggal,t0)<=7).map(h=>`${h.tanggal}: ${h.nadi?'nadi pagi '+h.nadi+', ':''}${h.energi?'energi '+h.energi+'/5, ':''}${h.tidur?'tidur '+h.tidur+' jam, ':''}${h.alasan?'alasan misi terlewat: '+h.alasan+(h.catatan?' ('+h.catatan+')':''):''}`).join('\n');
   const tp=statTopik().slice(0,6).map(r=>`${r.sub} ${r.top}: ${r.label}`).join('; ');
   return `Kamu pelatih pribadi saya untuk persiapan tes CPNS atau sekolah kedinasan (SKD dan tes kesamaptaan). Jawab dalam bahasa Indonesia yang sederhana, tegas, dan tidak berulang. Jangan mendiagnosis penyakit dan jangan menyarankan diet ketat. Kalau ada tanda bahaya (nyeri dada, sesak, pusing berat, pingsan, nyeri yang menetap), sarankan ke dokter.
@@ -1735,7 +1761,7 @@ function unduhIcs(){
     'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Waktunya latihan','TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
   unduh('pengingat-lari.ics',ics,'text/calendar');toast('Buka file itu untuk menambahkannya ke kalender');
 }
-function unduhCadangan(){unduh('cadangan-lari-'+today()+'.json',JSON.stringify({dibuat:new Date().toISOString(),profil:P,...D},null,1),'application/json')}
+function unduhCadangan(){unduh('cadangan-lari-'+today()+'.json',JSON.stringify({dibuat:new Date().toISOString(),profil:{...P,target:{...(P.target||{}),strava:undefined}},...D},null,1),'application/json')}
 
 /* ---------- Impor CSV Strava ---------- */
 function parseCsv(t){
@@ -2390,7 +2416,7 @@ function say(t,mad){
 }
 function mulaiSesi(id,paksa){
   const m=findMisi(id);if(!m||!m.sesi||m.done)return;
-  if(!paksa&&/-f2$/.test(id)){const idP=id.replace(/2$/,'');let jam=0;try{jam=Number(localStorage.getItem('jamPagi:'+idP))||0}catch(e){}
+  if(!paksa&&/-f2$/.test(id)&&m.sesiKe!=='lanjut'){const idP=id.replace(/2$/,'');let jam=0;try{jam=Number(localStorage.getItem('jamPagi:'+idP))||0}catch(e){}
     if(DONE.has(idP)&&jam&&Date.now()-jam<6*3600e3){const boleh=new Date(jam+6*3600e3);
       modal(`<h2>⏳ Tunggu dulu</h2><p>Sesi pagi selesai jam ${new Date(jam).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}. Jarak sesi pagi dan sore minimal 6 jam supaya tubuh pulih, jadi sesi sore sebaiknya mulai jam <b>${boleh.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</b>.</p>
       <div class="row"><button class="btn" onclick="tutupModal()">Oke, nanti saja</button><button class="btn ghost" onclick="tutupModal();mulaiSesi('${id}',true)">Tetap mulai</button></div>`);return}}
@@ -2437,11 +2463,11 @@ function inputOk(){
   const T=TG(),t0=today(),push=p=>S.pend.push(p.catch(e=>toast(e.message)));
   let k='good',mad=false;
   const cmp=(val,tg,lower)=>{if(!tg)return;const r=lower?tg/val:val/tg;if(r<.7){k='low';mad=true}else if(r<1)k='mid'};
-  if(s.kind==='lari'){try{cekPace(v,Math.max(1,S.last/60))}catch(e){toast(e.message);return}push(addRun({tanggal:t0,km:v,menit:Math.max(1,Math.round(S.last/60)),catatan:'Latihan terpandu'}));cmp(v,s.target)}
+  if(s.kind==='lari'){try{cekPace(v,Math.max(1,S.last/60))}catch(e){toast(e.message);return}push(addRun({tanggal:t0,km:v,menit:Math.max(1,Math.round(S.last/60)),catatan:'Latihan terpandu'}));cmp(v,s.target);if(terlaluCepat({tanggal:t0,km:v,menit:S.last/60}))setTimeout(()=>toast(PESAN_SANTAI),1500)}
   else if(s.kind==='lari12'&&v>4800){toast('Lebih dari 4.800 m dalam 12 menit berarti pace di bawah 2:30/km. Itu tidak masuk akal, cek ulang angkanya.');return}
   else if(s.kind==='benar'){if(v<15){k='low';mad=true}else if(v<24)k='mid'}
   else{
-    push(addLatihan({jenis:s.kind,tanggal:t0,nilai:v,catatan:S.m.tipe==='tes'?'Tes mingguan':'Latihan terpandu'}));
+    push(addLatihan({jenis:s.kind,tanggal:t0,nilai:v,catatan:s.cat||(S.m.tipe==='tes'?'Tes mingguan':'Latihan terpandu')}));
     if(['pushup','situp','pullup','lari12'].includes(s.kind)&&S.m.tipe==='tes')cmp(v,T[s.kind]);
     if(s.kind==='shuttle')cmp(v,T.shuttle,1);
     if(['twk','tiu','tkp'].includes(s.kind)){S.skd[s.kind]=v;cmp(v,T[s.kind]);
@@ -2915,6 +2941,7 @@ async function balasCoach(teks){
   // 2. cuaca dan tempat
   if(ada(t,/ (hujan|gerimis|becek|banjir|badai|petir|angin kencang|mendung) /)){
     if(cur==null)return ['Hujan bukan alasan berhenti. Program belum dimulai, mulai dulu di menu Hari ini.',0];
+    {const tgH=TGT||today();if(tgH>=JADWAL_BARU&&planTgl(tgH).some(m=>sesiUtama(m)&&m.kode===2&&!DONE.has(m.id)))return [await hujanInterval(tgH,null,true),0]}
     if(!LUAR.has(cur))return [`Aman, jadwal hari ini (${f.judul}) bisa dikerjakan di dalam rumah. Lanjutkan seperti biasa.`,0];
     const r=await ubahJadwal(9);return ['Hujan bukan alasan libur. Latihan pindah ke dalam rumah: sirkuit tanpa alat, cukup ruang 2 x 2 meter. '+r[0]+(cur===0?' Jangan berenang saat ada petir.':''),r[1]];
   }
@@ -3227,6 +3254,270 @@ function renderKemampuan(){
   box.innerHTML=`<div class="km-top"><div><span>Kesiapan tes</span><b>${siap}%</b><small>rata-rata dari ${ada.length} kemampuan dibanding target</small></div><div class="km-bar"><i style="width:${siap}%"></i></div></div>
    ${radar}<p class="msg" style="text-align:center;margin-top:-4px">Garis putus-putus adalah target. Makin penuh bidang biru, makin siap kamu.</p>${vo}`;
 }
+/* ================== Pembaruan 18 Nov 2026: Strava, isi belakangan, catat kekuatan, pengingat ================== */
+const GRACE=3,TES_SITUP='Tes sit up 1 menit',TES_SITUP_MULAI='2026-11-19',TES5K_KHUSUS=['2026-11-27'];
+const GPS_TANDA='⚠️ data GPS mungkin tidak akurat',PESAN_SANTAI='Hari santai terlalu cepat, pelankan supaya pulih.';
+// kode dari Strava dibaca sedini mungkin, lalu dihapus dari alamat
+const STRAVA_BALIK=(()=>{try{const u=new URL(location.href);if(u.searchParams.get('state')!=='runup')return null;
+  const o={code:u.searchParams.get('code'),scope:u.searchParams.get('scope')||'',error:u.searchParams.get('error')};history.replaceState(null,'',location.pathname+location.hash);return o}catch(e){return null}})();
+
+const tglLatih=id=>addDays(P.mulai,parseInt(id,10)-1);
+const sesiUtama=m=>/-f2?$/.test(m.id);
+const wajib=m=>sesiUtama(m)&&!opsionalBaru(m);
+const masihBisaIsi=tg=>tg<=today()&&diffDays(tg,today())<=GRACE;
+function belakangan(id){if(!P.mulai)return false;const r=D.misi.find(m=>m.misi_id===id);return !!(r&&r.tanggal>tglLatih(id))}
+function planTgl(tg){if(!P.mulai)return [];const dn=diffDays(P.mulai,tg)+1,pi=prog();if(dn<1||dn>pi.total)return [];return plan(dn)}
+function cariSesi(id){return planTgl(tglLatih(id)).find(x=>x.id===id)}
+function sesiBelum(tg){return planTgl(tg).filter(m=>wajib(m)&&!DONE.has(m.id))}
+
+/* ---------- Tes dan jadwal tambahan ---------- */
+function perluTesSitup(tg){return tg>=TES_SITUP_MULAI&&!D.latihan.some(l=>l.jenis==='situp'&&l.catatan===TES_SITUP&&l.tanggal<tg)}
+function tesSitup(tg){return perluTesSitup(tg)?[T_('Tes sit up 1 menit: sebanyak mungkin dengan gerakan benar',60,'Ini tes. Kerahkan tenaga, tapi jangan menarik leher dengan tangan.'),{...I_('situp','Berapa sit up dalam 1 menit?'),cat:TES_SITUP},Z_(90)]:[]}
+function tesSitupTks(tg){return perluTesSitup(tg)?'Mulai dengan tes sit up 1 menit (hasilnya disimpan sebagai hasil terbaik sit up). ':''}
+function hujanMinggu(tg){const J=(P.target&&P.target.jadwal)||{};return ((J.hujan||{})[wkStart(tg)])||0}
+function tes5kKhusus(tg){return TES5K_KHUSUS.some(k=>tg===(hujanMinggu(k)?addDays(k,7):k))}
+function futsalHari(tg){const g=((P.target&&P.target.jadwal&&P.target.jadwal.ganti)||{})[tg]||[];return D.checkin.some(c=>isBola(c)&&c.tanggal===tg)||g.includes(6)}
+function terbaikSitup(){const v=D.latihan.filter(l=>l.jenis==='situp'&&(l.catatan===TES_SITUP||l.catatan==='Tes mingguan')).map(l=>Number(l.nilai));return v.length?Math.max(...v):null}
+
+/* ---------- Hari santai ---------- */
+function hariSantai(tg){if(tg<JADWAL_BARU)return false;const pl=planTgl(tg);return pl.length>0&&!pl.some(m=>sesiUtama(m)&&(m.berat||m.tipe==='tes'))}
+function terlaluCepat(r){const km=Number(r.km),mn=Number(r.menit);return km>=1&&mn>0&&mn/km<6.5&&hariSantai(r.tanggal)}
+function peringatanSantai(){
+  const t0=today(),a=runsAll().filter(r=>r.tanggal<=t0&&diffDays(r.tanggal,t0)<=1&&terlaluCepat(r));
+  return a.map(r=>`<div class="cb">🐢 <b>${PESAN_SANTAI}</b><br>Lari ${fmtTgl(r.tanggal)}: pace ${fmtMnt(r.menit/r.km)}/km. Di hari santai, pace 6:30/km atau lebih lambat.</div>`).join('');
+}
+function dobel(x){if(x.strava_id)return false;const km=Number(x.km);return D.lari.some(y=>y.strava_id&&y.tanggal===x.tanggal&&Math.abs(Number(y.km)-km)<=Math.max(.3,km*.15))}
+
+/* ---------- Menandai sesi tuntas dari tanggal latihan ---------- */
+function sesiCocok(tg,jenis){
+  return planTgl(tg).filter(m=>sesiUtama(m)&&!DONE.has(m.id)&&(jenis==='lari'?['lari','tes'].includes(m.tipe)&&m.kode!==8:m.tipe===jenis))[0]||null;
+}
+async function tandaiSesi(tg,jenis,o={}){
+  if(!P.mulai||tg<JADWAL_BARU)return {};
+  if(!o.strava&&!masihBisaIsi(tg))return {telat:true};
+  const m=sesiCocok(tg,jenis);if(!m)return {};
+  const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:o.strava?tg:today(),misi_id:m.id,poin:10});
+  if(error&&error.code!=='23505')throw error;
+  DONE.add(m.id);
+  return {m,belakangan:!o.strava&&tg<today()};
+}
+function pesanLari(t,r){
+  let s='Lari tersimpan ✓';
+  if(t&&t.m)s+=' Sesi "'+t.m.judul+'" tuntas'+(t.belakangan?' (diisi belakangan).':'.');
+  else if(t&&t.telat)s+=' Sudah lewat 3 hari, jadi tidak dihitung tuntas.';
+  toast(s);
+  if(terlaluCepat(r))modal(`<h2>🐢 Pelankan</h2><p><b>${PESAN_SANTAI}</b></p><p class="sub">Pace kamu ${fmtMnt(Number(r.menit)/Number(r.km))}/km. Di hari santai, pace 6:30/km atau lebih lambat supaya otot pulih untuk sesi berat.</p><div class="row"><button class="btn" onclick="tutupModal()">Oke</button></div>`);
+}
+function catatLariUntuk(tg,ev){if(ev)ev.stopPropagation();
+  const i=$('tgl');if(!i)return;const d=i.closest('details');if(d)d.open=true;i.value=tg;
+  i.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{const k=$('km');if(k)k.focus()},400);
+}
+
+/* ---------- Catat latihan kekuatan dengan satu tombol ---------- */
+function rincianKekuatan(m){
+  const g=[];let tes=null;
+  (m.sesi||[]).forEach(s=>{
+    if(s.k==='input'){tes=s;return}
+    let r=s.k==='reps'&&s.t.match(/^(.*) set (\d+) dari (\d+)$/);
+    if(r){if(!g.find(y=>y.nama===r[1]))g.push({nama:r[1],set:+r[3],reps:s.reps});return}
+    r=s.k==='timer'&&s.t.match(/^(Plank.*?) (\d+) dari (\d+)$/);
+    if(r){const nama=r[1].replace(/ (kanan|kiri)$/,' (per sisi)');if(!g.find(y=>y.nama===nama))g.push({nama,set:+r[3],detik:s.sec})}
+  });
+  return {g,tes};
+}
+async function simpanSesi(id,catatan,tesVal){
+  const tg=tglLatih(id);
+  if(!masihBisaIsi(tg)){toast('Sudah lewat 3 hari, jadi tidak bisa dihitung tuntas lagi.');return}
+  try{
+    if(tesVal!=null)await addLatihan({jenis:'situp',tanggal:tg,nilai:tesVal,catatan:TES_SITUP});
+    const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:today(),misi_id:id,poin:10});
+    if(error&&error.code!=='23505')throw error;
+    if(catatan)await db.from('checkin').insert({user_id:USER.id,tanggal:tg,jenis:'kekuatan',misi_id:id,catatan});
+  }catch(e){toast(e.message);return}
+  tutupModal();await refresh();
+  toast('Tercatat ✓'+(tg<today()?' (diisi belakangan)':'')+(tesVal!=null?' Hasil terbaik sit up: '+terbaikSitup()+' kali.':''));
+}
+function selesaiRencana(id,ev){if(ev)ev.stopPropagation();
+  const m=cariSesi(id);if(!m)return;
+  if(m.tipe==='kekuatan'&&rincianKekuatan(m).tes)return formKekuatan(id);
+  simpanSesi(id,null,null);
+}
+function formKekuatan(id,ev){if(ev)ev.stopPropagation();
+  const m=cariSesi(id);if(!m)return;const {g,tes}=rincianKekuatan(m),tg=tglLatih(id);
+  modal(`<h2>🏋️ ${esc(m.judul)}</h2><p class="sub">${fmtTgl(tg)}${tg<today()?' · diisi belakangan':''}. Angkanya sudah sesuai rencana. Ubah hanya yang berbeda.</p>
+  ${tes?`<label class="lbl">Tes sit up 1 menit (jumlah)<input type="number" id="kTes" inputmode="numeric" placeholder="misal 40"></label>`:''}
+  <div class="kr">${g.map((x,i)=>`<div class="kr-r"><span>${esc(x.nama)}</span><input type="number" inputmode="numeric" id="kS${i}" value="${x.set}" aria-label="jumlah set"><i>×</i><input type="number" inputmode="numeric" id="kR${i}" value="${x.reps!=null?x.reps:x.detik}" aria-label="${x.reps!=null?'ulangan':'detik'}"><small>${x.reps!=null?'kali':'detik'}</small></div>`).join('')}</div>
+  <div class="row"><button class="btn" onclick="kirimKekuatan('${id}')">Simpan</button><button class="btn ghost" onclick="tutupModal()">Batal</button></div><p class="msg" id="kMsg"></p>`);
+}
+function kirimKekuatan(id){
+  const m=cariSesi(id);if(!m)return;const {g,tes}=rincianKekuatan(m);let tv=null;
+  if(tes){tv=Number($('kTes').value);if(!(tv>0)){$('kMsg').textContent='Isi hasil tes sit up 1 menit dulu.';return}}
+  const beda=[];g.forEach((x,i)=>{const s=Number($('kS'+i).value),r=Number($('kR'+i).value),r0=x.reps!=null?x.reps:x.detik;if(s!==x.set||r!==r0)beda.push(`${x.nama} ${s} x ${r} (rencana ${x.set} x ${r0})`)});
+  simpanSesi(id,beda.length?'Berbeda dari rencana: '+beda.join(', '):null,tv);
+}
+
+/* ---------- Tombol di baris misi ---------- */
+function tombolSesi(m,tg){
+  if(m.tipe==='kekuatan')return `<span class="qa"><button class="btn sm" onclick="selesaiRencana('${m.id}',event)">✅ Selesai sesuai rencana</button><button class="btn ghost sm" onclick="formKekuatan('${m.id}',event)">Ubah detail</button></span>`;
+  if(m.tipe==='lari'||m.tipe==='tes')return `<span class="qa">${m.kode===2&&tg===today()&&[3,4].includes(m.dow)?`<button class="btn ghost sm" onclick="hujanInterval('${tg}',event)">🌧️ Batal karena hujan</button>`:''}<button class="btn ghost sm" onclick="catatLariUntuk('${tg}',event)">📝 Catat manual</button>${tg<today()?`<button class="btn ghost sm" onclick="selesaiRencana('${m.id}',event)">✅ Sudah</button>`:''}</span>`;
+  return tg<today()?`<span class="qa"><button class="btn ghost sm" onclick="selesaiRencana('${m.id}',event)">✅ Sudah</button></span>`:'';
+}
+function aksiMisi(m){
+  if(!m.id||!sesiUtama(m)||!m.tg||m.tg<JADWAL_BARU)return '';
+  if(m.done)return belakangan(m.id)?' <small class="lt">diisi belakangan</small>':'';
+  return tombolSesi(m,m.tg);
+}
+function htmlBelumDicatat(){
+  if(!P.mulai)return '';let h='';
+  for(let i=1;i<=GRACE;i++){const tg=addDays(today(),-i);if(tg<JADWAL_BARU)break;
+    sesiBelum(tg).forEach(m=>{h+=`<div class="m bl"><span class="ck">·</span><p><small>${fmtTgl(tg)} · Belum dicatat</small>${esc(m.judul)}${tombolSesi(m,tg)}</p></div>`})}
+  return h?'<p class="lbl" style="margin-top:16px">Belum dicatat (bisa diisi sampai 3 hari ke belakang)</p>'+h:'';
+}
+
+/* ---------- Aturan hujan untuk interval ---------- */
+async function hujanInterval(tg,ev,diam){if(ev)ev.stopPropagation();
+  const dow=new Date(tg+'T12:00:00').getDay(),n=hujanMinggu(tg)+1,pl=planTgl(tg);
+  if(!pl.some(m=>sesiUtama(m)&&m.kode===2)){const t='Jadwal hari itu bukan interval, jadi aturan hujan untuk interval tidak dipakai.';if(!diam)toast(t);return t}
+  if(n>2||dow>4){const t='Interval tidak bisa digeser lagi minggu ini, karena Sabtu ada long run. Kerjakan versi di dalam rumah lewat Tanya coach.';if(!diam)toast(t);return t}
+  const J={...((P.target&&P.target.jadwal)||{})};J.hujan={...(J.hujan||{}),[wkStart(tg)]:n};
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target:{...(P.target||{}),jadwal:J}},{onConflict:'user_id'});
+  if(error){if(!diam)toast(error.message);return error.message}
+  await refresh();
+  const t=n===1?'Interval batal karena hujan, jadi digeser ke besok (Kamis). Tempo hari Jumat diganti jogging santai 30 menit, supaya interval dan tempo tidak berturut-turut.':'Interval digeser lagi ke Jumat. Jumat pagi interval, sore tetap Full Body B.';
+  if(!diam)toast(t);return t;
+}
+
+/* ---------- Strava ---------- */
+function stravaInfo(){return (P&&P.target&&P.target.strava)||null}
+async function simpanStrava(o){
+  const target={...(P.target||{}),strava:o||null};
+  const {error}=await db.from('profil').upsert({user_id:USER.id,target},{onConflict:'user_id'});if(error)throw error;
+  P.target=target;
+}
+async function panggilStrava(body){
+  if(TAMU)throw new Error('Sinkron Strava butuh akun. Buat akun dulu, mode tamu tidak bisa.');
+  if(!db.functions)throw new Error('Fitur ini butuh koneksi ke Supabase.');
+  const {data,error}=await db.functions.invoke('strava',{body});
+  if(error){let pesan=error.message||'',st_=0;
+    try{st_=error.context&&error.context.status;const j=await error.context.json();if(j&&j.error)pesan=j.error}catch(e){}
+    if(st_===404||/FunctionsFetchError|FunctionsRelayError/.test(error.name||''))throw new Error('Fungsi "strava" belum terpasang di Supabase. Ikuti langkah di kartu Strava (menu Profil).');
+    if(st_===401)throw new Error('Supabase menolak (401). Masuk ulang, atau matikan "Verify JWT" di pengaturan fungsi strava.');
+    throw new Error(pesan)}
+  if(data&&data.error)throw new Error(data.error);
+  return data||{};
+}
+async function stravaHubungkan(){
+  try{const {client_id}=await panggilStrava({aksi:'info'});
+    location.href='https://www.strava.com/oauth/authorize?'+new URLSearchParams({client_id,redirect_uri:location.origin+location.pathname,response_type:'code',approval_prompt:'auto',scope:'read,activity:read_all',state:'runup'});
+  }catch(e){toast(e.message)}
+}
+async function stravaCekKembali(){
+  const b=STRAVA_BALIK;if(!b||b.dipakai)return false;b.dipakai=true;
+  if(b.error||!b.code){toast('Menghubungkan Strava dibatalkan.');return true}
+  if(!/activity:read/.test(b.scope)){toast('Izin melihat aktivitas belum dicentang. Hubungkan ulang Strava dan centang izinnya.');return true}
+  try{const d=await panggilStrava({aksi:'tukar',code:b.code});
+    await simpanStrava({refresh:d.refresh_token,atlet:d.atlet||'',after:Math.floor(new Date(addDays(today(),-30)+'T00:00:00').getTime()/1000),terhubung:today()});
+    toast('Strava terhubung ✓ Mengambil aktivitas...');await stravaSinkron(true);
+  }catch(e){toast('Gagal menghubungkan Strava: '+e.message)}
+  return true;
+}
+let SINKRON=false;
+async function stravaSinkron(manual){
+  const s=stravaInfo();
+  if(!s||!s.refresh){if(manual)toast('Strava belum terhubung. Hubungkan dulu di menu Profil.');return 0}
+  if(SINKRON)return 0;
+  if(!manual){let t=0;try{t=Number(localStorage.getItem('stravaCek'))||0}catch(e){}if(Date.now()-t<10*60e3)return 0}
+  SINKRON=true;try{localStorage.setItem('stravaCek',String(Date.now()))}catch(e){}
+  document.querySelectorAll('.stSync').forEach(b=>{b.disabled=true;b.dataset.l=b.textContent;b.textContent='Menyinkron...'});
+  let n=0;
+  try{
+    const d=await panggilStrava({aksi:'aktivitas',refresh_token:s.refresh,after:s.after||0});
+    const akt=(d.aktivitas||[]).filter(a=>/run/i.test(a.jenis||'')&&Number(a.jarak)>0&&Number(a.gerak)>0);
+    const rows=akt.map(a=>{const gps=Number(a.maks||0)*3.6>30;
+      return {user_id:USER.id,tanggal:String(a.mulai).slice(0,10),km:+(a.jarak/1000).toFixed(2),menit:+(a.gerak/60).toFixed(1),hr:a.hr?Math.round(a.hr):null,
+        catatan:[a.nama,gps?GPS_TANDA:''].filter(Boolean).join(' · ')||null,sumber:'strava',strava_id:String(a.id)}});
+    let baru=[];
+    for(let i=0;i<rows.length;i+=100){const {data,error}=await db.from('lari').upsert(rows.slice(i,i+100),{onConflict:'user_id,strava_id',ignoreDuplicates:true}).select('id,tanggal,km,menit,catatan,strava_id');if(error)throw error;baru=baru.concat(data||[])}
+    n=baru.length;let tuntas=0;
+    for(const r of baru.sort((a,b)=>a.tanggal.localeCompare(b.tanggal))){try{const t=await tandaiSesi(r.tanggal,'lari',{strava:true});if(t.m)tuntas++}catch(e){}}
+    const maks=akt.reduce((m,a)=>Math.max(m,Date.parse(a.mulai_utc||a.mulai)/1000||0),0);
+    await simpanStrava({...s,refresh:d.refresh_token||s.refresh,after:Math.max(s.after||0,maks?Math.floor(maks-3*86400):0),sinkron:new Date().toISOString()});
+    await refresh();
+    const gps=baru.filter(r=>(r.catatan||'').includes(GPS_TANDA)).length;
+    if(n||manual)toast(n?`${n} lari baru dari Strava${tuntas?', '+tuntas+' sesi ditandai tuntas':''}.${gps?' '+gps+' aktivitas: data GPS mungkin tidak akurat.':''}`:'Strava: tidak ada lari baru.');
+    if(baru.some(terlaluCepat))setTimeout(()=>toast(PESAN_SANTAI),2500);
+  }catch(e){if(manual)toast('Sinkron Strava gagal: '+e.message);else console.warn('Strava:',e.message)}
+  finally{SINKRON=false;document.querySelectorAll('.stSync').forEach(b=>{b.disabled=false;if(b.dataset.l)b.textContent=b.dataset.l})}
+  return n;
+}
+async function stravaPutus(){
+  const s=stravaInfo();if(!s)return;
+  try{await panggilStrava({aksi:'putus',refresh_token:s.refresh})}catch(e){}
+  try{await simpanStrava(null);renderStrava();toast('Strava diputus. Data lari yang sudah masuk tetap tersimpan.')}catch(e){toast(e.message)}
+}
+function renderStrava(){
+  const box=$('stBox');if(!box)return;const s=stravaInfo();
+  if(TAMU){box.innerHTML='<p class="msg">Sinkron Strava butuh akun. Mode tamu tidak bisa terhubung ke Strava.</p>';return}
+  if(s&&s.refresh){
+    box.innerHTML=`<p class="sub">✅ Terhubung${s.atlet?' sebagai <b>'+esc(s.atlet)+'</b>':''}. Lari dari Strava otomatis masuk setiap aplikasi dibuka, lalu dicocokkan dengan sesi lari di tanggal itu.</p>
+    <p class="msg">Sinkron terakhir: ${s.sinkron?new Date(s.sinkron).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'belum'}</p>
+    <div class="row"><button class="btn stSync" onclick="stravaSinkron(true)">🔄 Sinkron sekarang</button><button class="btn ghost" onclick="stravaPutus()">Putuskan</button></div>`;return}
+  box.innerHTML=`<p class="sub">Hubungkan Strava supaya lari yang kamu rekam otomatis masuk: tanggal, jarak, waktu bergerak, dan pace. Sesi lari di tanggal itu langsung ditandai tuntas.</p>
+  <div class="row"><button class="btn" onclick="stravaHubungkan()">Hubungkan Strava</button></div>
+  <p class="msg">Sebelum tombol ini bisa dipakai, pasang dulu kunci API Strava di Supabase (sekali saja). Langkahnya ada di panduan yang dikirim coach.</p>`;
+}
+
+/* ---------- Pengingat jam 20:00 ---------- */
+let TM20=null,SIAP=false;
+const swSiap=()=>'serviceWorker' in navigator?Promise.race([navigator.serviceWorker.ready,new Promise(r=>setTimeout(()=>r(null),3000))]):Promise.resolve(null);
+function pengingatAktif(){try{return localStorage.getItem('ingat20')==='1'}catch(e){return false}}
+async function aktifkanPengingat(){
+  if(!('Notification' in window)){toast('Browser ini tidak mendukung notifikasi.');return}
+  const p=await Notification.requestPermission();
+  if(p!=='granted'){toast('Izin notifikasi ditolak. Izinkan lewat pengaturan browser, lalu coba lagi.');return}
+  try{localStorage.setItem('ingat20','1')}catch(e){}
+  try{const reg=await swSiap();if(reg&&reg.periodicSync)await reg.periodicSync.register('pengingat',{minInterval:3600e3})}catch(e){}
+  jadwalkanPengingat();renderPengingat();simpanStatus();toast('Pengingat jam 20:00 aktif ✓');
+}
+async function matikanPengingat(){try{localStorage.removeItem('ingat20')}catch(e){}clearTimeout(TM20);
+  try{const reg=await swSiap();if(reg&&reg.periodicSync)await reg.periodicSync.unregister('pengingat')}catch(e){}
+  renderPengingat();simpanStatus();toast('Pengingat dimatikan');}
+function renderPengingat(){
+  const box=$('ingBox');if(!box)return;const on=pengingatAktif();
+  box.innerHTML=`<p class="sub">Jam 20:00, kamu dapat notifikasi kalau ada sesi hari itu yang belum dicatat dan belum masuk dari Strava.</p>
+  <div class="row">${on?'<button class="btn ghost" onclick="matikanPengingat()">Matikan pengingat</button><span class="msg">✅ Aktif</span>':'<button class="btn" onclick="aktifkanPengingat()">🔔 Aktifkan pengingat</button>'}</div>
+  <p class="msg">Notifikasi paling pasti muncul kalau RunUp terpasang di layar utama HP dan masih terbuka di latar belakang. Kalau aplikasi ditutup total, HP bisa menundanya.</p>`;
+  const su=$('suBest');if(su){const b=terbaikSitup();su.innerHTML='💪 Hasil terbaik sit up (tes 1 menit): <b>'+(b?b+' kali':'belum ada')+'</b>'}
+}
+function jadwalkanPengingat(){
+  clearTimeout(TM20);if(!pengingatAktif())return;
+  const now=new Date(),t=new Date();t.setHours(20,0,0,0);
+  if(now<t)TM20=setTimeout(cekPengingat,t-now+1000);else cekPengingat();
+}
+async function sudahNotif(t0){try{if(localStorage.getItem('notif20')===t0)return true;const c=await caches.open('runup-status'),r=await c.match('notif');return !!(r&&(await r.text())===t0)}catch(e){return false}}
+async function tandaiNotif(t0){try{localStorage.setItem('notif20',t0)}catch(e){}try{const c=await caches.open('runup-status');await c.put('notif',new Response(t0))}catch(e){}}
+async function cekPengingat(){
+  if(!pengingatAktif()||!USER||!P.mulai)return;const t0=today();
+  if(new Date().getHours()<20)return jadwalkanPengingat();
+  if(await sudahNotif(t0))return;
+  try{await stravaSinkron(false)}catch(e){}
+  const b=sesiBelum(t0);if(!b.length)return;
+  await tandaiNotif(t0);
+  const body='Belum tercatat: '+b.map(m=>m.judul).join(', ')+'. Catat sekarang, atau sinkron Strava kalau sudah lari.';
+  try{const reg=await swSiap();if(!reg)throw 0;await reg.showNotification('RunUp: latihan hari ini belum dicatat',{body,icon:'icon-192.png',badge:'icon-192.png',tag:'runup-20'})}
+  catch(e){try{new Notification('RunUp: latihan hari ini belum dicatat',{body})}catch(e2){}}
+}
+async function simpanStatus(){ // dibaca service worker untuk pengingat saat aplikasi tertutup
+  if(!('caches' in window)||!USER||!st)return;
+  try{const c=await caches.open('runup-status');await c.put('status',new Response(JSON.stringify({tanggal:today(),belum:P.mulai?sesiBelum(today()).map(m=>m.judul):[],aktif:pengingatAktif()})))}catch(e){}
+}
+function setelahMuat(){
+  if(SIAP)return;SIAP=true;
+  stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
+  jadwalkanPengingat();
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER){stravaSinkron(false);jadwalkanPengingat()}});
+}
+
 /* ---------- Mode tamu: pakai tanpa akun, data disimpan di HP ini saja ---------- */
 var TAMU=false;
 const KUNCI_TAMU='runupTamu',TABEL=['lari','latihan','misi','checkin','harian','soal','jawaban','profil'];
