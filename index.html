@@ -477,6 +477,25 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
 .msg.err{color:#B42318}
 .gpil{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.gpil .opt{font-size:14px;padding:8px 12px}
 #cG{width:100%!important;max-height:260px}
+/* ---------- Warna per jenis latihan ---------- */
+.j-lari{--c:#EA6A0C;--cd:#B54F06;--cp:#FFF4EA}
+.j-kuat{--c:#7C3AED;--cd:#5B21B6;--cp:#F5F0FF}
+.j-rest{--c:#16A34A;--cd:#0F7A36;--cp:#EDFBF2}
+.j-lain{--c:#6B7280;--cd:#4B5563;--cp:#F3F4F6}
+.ses[class*="j-"]{background:var(--cp);border:0;border-left:7px solid var(--c);border-radius:18px}
+.ses.done{opacity:.72}
+.ses .cek{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--c);color:#fff;font:800 18px system-ui;font-style:normal}
+.wkt{display:inline-block;background:var(--c);color:#fff;font-size:13px;font-weight:700;border-radius:99px;padding:2px 10px;margin-bottom:3px}
+.ses-h .wkt{display:table}
+.ses .btn.besar,.ri-s .btn:not(.ghost){background:var(--c);box-shadow:0 4px 0 var(--cd)}
+.lk{list-style:none;margin:12px 0 14px;padding:0;display:grid;gap:12px}
+.lk li{display:flex;gap:12px;align-items:flex-start;font-size:17px;line-height:1.5}
+.lk .no{flex:none;width:28px;height:28px;border-radius:50%;background:var(--c);color:#fff;font:800 14px Sora,system-ui,sans-serif;display:grid;place-items:center;margin-top:-1px}
+.lk-t b{color:#0A2457}
+.ri-s{background:var(--cp);border-left:5px solid var(--c);border-top:0;border-radius:12px;padding:10px 10px 10px 6px;margin:8px 0}
+.ri-s.done{opacity:.75}.ri-s .lk{gap:8px;margin:8px 0 4px}.ri-s .lk li{font-size:15px}.ri-s .lk .no{width:24px;height:24px;font-size:12px}
+.ri-s .ses-d{font-size:15px;margin:4px 0}.ri-s .wkt{font-size:12px;padding:1px 8px}
+.ri-b .lk-t b{display:inline;font-size:inherit}.ri-b .wkt{display:inline-block;vertical-align:middle}
 
 </style>
 </head>
@@ -1741,7 +1760,7 @@ async function refresh(){
   render();
 }
 let SIAP=false;
-async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
+async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();await gantiProgram();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER)stravaSinkron(false)})}}catch(e){toast(e.message)}}
 async function simpanTarget(ubah){
   const target={...(P.target||{}),...ubah};
@@ -1872,9 +1891,18 @@ function tombolSesi(s,diRiwayat){
   if(!masihBisaIsi(s.tg))return '';
   return `<button class="btn ${diRiwayat?'sm':'besar'}" onclick="tandaiSelesai('${s.id}','${s.tg}')">Selesai</button>`;
 }
+const JK={Lari:'j-lari',Kekuatan:'j-kuat',Istirahat:'j-rest',Lainnya:'j-lain'};
+function detailHtml(d){
+  const t=String(d||'');if(!t.trim())return '';
+  if(!t.includes(';'))return `<p class="ses-d">${esc(t.trim())}</p>`;
+  const fmt=x=>{const m=x.match(/^([^:]{1,40}):\s*(.*)$/);return m?`<b>${esc(m[1].trim())}</b>: ${esc(m[2])}`:esc(x)};
+  const a=t.split(';').map(x=>x.trim()).filter(Boolean);
+  return `<ol class="lk">${a.map((x,i)=>`<li><span class="no">${i+1}</span><span class="lk-t">${fmt(x)}</span></li>`).join('')}</ol>`;
+}
 function kartuSesi(s){
-  return `<div class="ses${s.done&&!s.rest?' done':''}${s.rest?' rest':''}"><div class="ses-h"><span class="ses-ik">${IK[s.j]}</span><div><small>${s.w==='-'?'Bebas':s.w}</small><b>${s.j}</b></div>${s.done&&!s.rest?'<em>✅</em>':''}</div>
-  ${s.d?`<p class="ses-d">${esc(s.d)}</p>`:''}${tombolSesi(s,false)}</div>`;
+  const tuntas=s.done&&!s.rest;
+  return `<div class="ses ${JK[s.j]}${tuntas?' done':''}"><div class="ses-h"><span class="ses-ik">${IK[s.j]}</span><div><span class="wkt">${s.w==='-'?'Bebas':s.w}</span><b>${s.j}</b></div>${tuntas?'<em class="cek">✓</em>':''}</div>
+  ${detailHtml(s.d)}${tombolSesi(s,false)}</div>`;
 }
 function renderHari(){
   const t0=today(),ss=statusSesi(t0);
@@ -1902,7 +1930,7 @@ function renderRiwayat(){
   $('rList').innerHTML=days.slice(0,RLIM).map(tg=>{
     const st_=statusHari(tg),ss=statusSesi(tg),runs=lariTgl(tg),bisa=masihBisaIsi(tg);
     const lencana=st_==='ok'?'<span class="bdg ok">✅ Tuntas</span>':st_==='belum'?'<span class="bdg abu">Belum dicatat</span>':st_==='x'?'<span class="bdg x">❌ Terlewat</span>':'';
-    let h=ss.map(s=>`<div class="ri"><span class="ri-ik">${s.done?(s.rest?'😴':'✅'):st_==='x'?'❌':'⬜'}</span><div class="ri-b"><b>${s.w==='-'?'':s.w+' · '}${s.j}</b>${s.d?`<small>${esc(s.d)}</small>`:''}${tombolSesi(s,true)}</div></div>`).join('');
+    let h=ss.map(s=>`<div class="ri ri-s ${JK[s.j]}${s.done&&!s.rest?' done':''}"><span class="ri-ik">${s.done?(s.rest?'😴':'✅'):st_==='x'?'❌':'⬜'}</span><div class="ri-b"><b>${s.w==='-'?'':`<span class="wkt">${s.w}</span> `}${s.j}</b>${detailHtml(s.d)}${tombolSesi(s,true)}</div></div>`).join('');
     const pakai=new Set(ss.filter(s=>s.run).map(s=>s.run.id));
     h+=runs.filter(r=>!pakai.has(r.id)).map(r=>`<div class="ri"><span class="ri-ik">🏃</span><div class="ri-b"><b>Lari ${fmtKm(r.km)} km</b><small>${fmtDur(r.menit)} · pace ${fmtPace(r.menit/r.km)}/km · ${r.strava_id?'Strava':'manual'}</small></div></div>`).join('');
     h+=runs.filter(r=>!r.strava_id&&bisa).map(r=>`<div class="row" style="margin:2px 0 6px 40px"><button class="btn ghost sm" onclick="formLari('${tg}',${r.id})">Ubah lari ${fmtKm(r.km)} km</button></div>`).join('');
@@ -2184,6 +2212,30 @@ function renderGrafik(){
       {label:'Target '+T.skd,data:ds.map(()=>T.skd),borderColor:'#E5484D',borderDash:[6,5],borderWidth:1.5,pointRadius:0}]},
       options:{animation:{duration:1200},plugins:{legend:{labels:{usePointStyle:true}}},scales:GRID}});
   }
+}
+
+
+/* ---------- Ganti program 19-22 Nov 2026 (sekali jalan, status tuntas dijaga) ---------- */
+const GANTI_ID='program20261119b';
+const GANTI_TEKS=`2026-11-19 | Pagi | Lari | Jogging santai: 20 menit, pace 7:00 atau lebih lambat; Latihan tangga: 25 menit; Naik: jalan cepat, tangan di lutut; Turun: langkah pendek, terkontrol; Target: naik 150-200 m
+2026-11-19 | Sore | Kekuatan | Squat: 3x15; Lunge: 3x10 per kaki; Single-leg deadlift: 3x8 per kaki; Calf raise: 3x20; Glute bridge: 3x15; Catatan: sisakan 2-3 repetisi, batal kalau futsal
+2026-11-20 | Pagi | Lari | Pemanasan: 10 menit santai; Tempo: 15 menit, pace 5:00; Pendinginan: 10 menit santai
+2026-11-20 | Sore | Kekuatan | Pull up: 4 set; Push up: 3x30; Dips: 3x12; Sit up: 3x30; Plank samping: 3x30 detik per sisi
+2026-11-21 | Pagi | Lari | Long run: 12 km; Pace: 7:00-7:30; Rute: cari yang ada tanjakan; Catatan: bawa minum
+2026-11-22 | - | Istirahat | Istirahat total`;
+async function gantiProgram(){
+  if(TAMU||!USER||!stravaInfo()||(P.target&&P.target[GANTI_ID]))return;
+  try{
+    const {rows,err}=parseProgram(GANTI_TEKS);if(err.length)throw new Error('format');
+    const tgs=[...new Set(rows.map(r=>r.tg))],lama={};
+    tgs.forEach(t=>lama[t]=statusSesi(t).filter(x=>x.done&&x.misi));
+    const prog={...program()},baru={};rows.forEach(r=>(baru[r.tg]=baru[r.tg]||[]).push({w:r.w,j:r.j,d:r.d}));
+    Object.assign(prog,baru);await simpanTarget({program:prog});
+    for(const t of tgs){const pakai=new Set();
+      for(const o of lama[t]){const n=sesiTgl(t).find(x=>x.j===o.j&&!pakai.has(x.id));if(!n)continue;pakai.add(n.id);
+        if(n.id!==o.id&&!D.misi.some(m=>m.misi_id===n.id)){const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:o.misi.tanggal,misi_id:n.id,poin:10});if(error&&error.code!=='23505')throw error}}}
+    await simpanTarget({[GANTI_ID]:true});await refresh();toast('Program 19–22 November sudah diganti ✓');
+  }catch(e){console.warn('ganti program',e)}
 }
 
 /* ---------- Tampilan ---------- */
