@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Sora:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--navy:#0A2457;--blue:#1D5FE0;--sky:#5BB6FF;--ice:#EEF5FF;--line:#D6E4FA;--white:#fff;--mut:#5B6F94;--up:#0FA968;--dn:#E5484D;--warn:#B7791F}
@@ -474,6 +475,8 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
 .prg-err small{color:#B42318;font-size:14px}
 .prg-ok{background:#ECFBF3;border:2px solid #BFEBD3;border-radius:14px;padding:12px;margin-top:12px;font-size:15px;line-height:1.5}
 .msg.err{color:#B42318}
+.gpil{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.gpil .opt{font-size:14px;padding:8px 12px}
+#cG{width:100%!important;max-height:260px}
 
 </style>
 </head>
@@ -583,6 +586,7 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
   <!-- RIWAYAT -->
   <section class="tab" id="tab-riw">
     <h2 class="judul">Riwayat</h2>
+    <section class="card"><h2>📈 Grafik naik turun</h2><div class="opts gpil" id="gPil"></div><div id="gBox"></div></section>
     <p class="sub">Terbaru di atas. Hari yang lewat masih bisa diisi sampai 3 hari ke belakang dan tetap dihitung tuntas.</p>
     <div class="row" style="margin:0 0 14px"><button class="btn" onclick="formLari()">+ Catat lari manual</button></div>
     <div id="rList"></div>
@@ -2105,12 +2109,87 @@ async function catatTitipan(){
   }catch(e){console.warn('titipan',e)}
 }
 
+
+/* ---------- Grafik naik turun ---------- */
+const GRID={x:{grid:{display:false}},y:{grid:{color:'#E6EEFB'}}};
+const KOMP={lari:['Lari','km/jam'],pushup:['Push up','kali'],situp:['Sit up','kali'],pullup:['Pull up','kali'],shuttle:['Shuttle run','detik'],skd:['SKD','poin']};
+let GRAF='idx';
+function runsAll(){return D.lari.filter(x=>!dobel(x)).map(x=>{const km=Number(x.km),m=Number(x.menit);return {tanggal:x.tanggal,km,menit:m,speed:km/(m/60)}}).filter(r=>r.km>0&&r.menit>0&&isFinite(r.speed)).sort((a,b)=>a.tanggal.localeCompare(b.tanggal))}
+function seriesKomp(){
+  const by={},put=(k,t,v,mn)=>{if(!(v>0))return;by[k]=by[k]||{};const o=by[k][t];by[k][t]=o==null?v:(mn?Math.min(o,v):Math.max(o,v))};
+  runsAll().forEach(r=>put('lari',r.tanggal,r.speed));
+  D.latihan.forEach(l=>{if(['pushup','situp','pullup','skd'].includes(l.jenis))put(l.jenis,l.tanggal,l.nilai);else if(l.jenis==='shuttle')put('shuttle',l.tanggal,l.nilai,1)});
+  return by;
+}
+function indeks(){
+  const by=seriesKomp(),dates=[...new Set(Object.values(by).flatMap(o=>Object.keys(o)))].sort(),base={},last={},out=[];
+  dates.forEach(t=>{Object.keys(by).forEach(k=>{const v=by[k][t];if(v!=null){if(base[k]==null)base[k]=v;last[k]=v}});
+    const c={};Object.keys(base).forEach(k=>c[k]=k==='shuttle'?base[k]/last[k]*100:last[k]/base[k]*100);
+    const vals=Object.values(c);out.push({t,v:vals.reduce((a,b)=>a+b,0)/vals.length,c,last:{...last}})});
+  return out;
+}
+function pointAt(ix,t){let p=null;for(const x of ix){if(x.t<=t)p=x;else break}return p}
+function ma(a,n){return a.map((_,i)=>{const s=a.slice(Math.max(0,i-n+1),i+1);return s.reduce((x,y)=>x+y,0)/s.length})}
+const NAIK=c=>c.p1.parsed.y>=c.p0.parsed.y?'#0FA968':'#E5484D';
+function pilihGrafik(k){GRAF=k;renderGrafik()}
+function renderGrafik(){
+  const box=$('gBox');if(!box)return;
+  const P_={idx:'Indeks',lari:'Kecepatan lari',km:'Km per minggu',kuat:'Push, sit, pull up',skd:'Skor SKD'};
+  $('gPil').innerHTML=Object.entries(P_).map(([k,n])=>`<button class="opt${GRAF===k?' on':''}" onclick="pilihGrafik('${k}')">${n}</button>`).join('');
+  if(typeof Chart==='undefined'){box.innerHTML='<p class="msg">Grafik belum termuat. Periksa koneksi internet, lalu buka ulang.</p>';return}
+  box.innerHTML='<p class="sub" id="gKet"></p><canvas id="cG" height="230"></canvas><div id="gBawah"></div>';
+  const ket=t=>$('gKet').innerHTML=t,bawah=h=>$('gBawah').innerHTML=h,kosong=t=>{box.innerHTML='<p class="msg" style="padding:20px 0;text-align:center">'+t+'</p>'};
+  const isi=(ctx)=>{const g=ctx.createLinearGradient(0,0,0,260);g.addColorStop(0,'rgba(29,95,224,.28)');g.addColorStop(1,'rgba(29,95,224,0)');return g};
+  if(GRAF==='idx'){
+    const ix=indeks();if(!ix.length)return kosong('Belum ada data. Grafik muncul setelah ada lari atau hasil tes.');
+    ket('Semua latihan digabung seperti indeks saham. Hasil pertama tiap latihan bernilai 100. <b class="up">Hijau naik</b>, <b class="dn">merah turun</b>.');
+    mk('cG',{type:'line',data:{labels:ix.map(p=>fmtPendek(p.t)),datasets:[
+      {label:'Indeks',data:ix.map(p=>+p.v.toFixed(1)),fill:true,backgroundColor:isi($('cG').getContext('2d')),borderWidth:3,tension:.3,pointRadius:4,borderColor:'#1D5FE0',segment:{borderColor:NAIK}},
+      {label:'Titik awal',data:ix.map(()=>100),borderColor:'#9DBFF5',borderDash:[6,5],borderWidth:1.5,pointRadius:0}]},
+      options:{animation:{duration:1200},interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:GRID}});
+    const L=ix[ix.length-1],R=pointAt(ix,addDays(today(),-7))||ix[0];
+    bawah(Object.keys(L.c).map(k=>{const now=L.c[k],was=R.c[k]!=null?R.c[k]:100,d=now-was;
+      return `<div class="stk"><span>${KOMP[k][0]}<br><small class="msg">${f(L.last[k],k==='lari'||k==='shuttle'?1:0).replace('.',',')} ${KOMP[k][1]}</small></span><span style="text-align:right"><b>${f(now,1).replace('.',',')}</b><br><small class="${d>=0?'up':'dn'}">${d>=0?'▲ +':'▼ '}${f(d,1).replace('.',',')} sejak ${fmtPendek(R.t)}</small></span></div>`}).join(''));
+  }else if(GRAF==='lari'){
+    const runs=runsAll();if(!runs.length)return kosong('Belum ada data lari.');
+    const sp=runs.map(r=>+r.speed.toFixed(2));
+    ket('Kecepatan tiap lari (km/jam). <b class="up">Hijau</b> lebih cepat dari lari sebelumnya, <b class="dn">merah</b> lebih lambat. Garis putus-putus adalah tren 5 lari.');
+    mk('cG',{type:'line',data:{labels:runs.map(r=>fmtPendek(r.tanggal)),datasets:[
+      {label:'Kecepatan (km/jam)',data:sp,fill:true,backgroundColor:isi($('cG').getContext('2d')),borderWidth:3,tension:.3,pointRadius:5,borderColor:'#1D5FE0',
+       pointBackgroundColor:sp.map((v,i)=>i&&v<sp[i-1]?'#E5484D':'#0FA968'),pointBorderColor:'#fff',pointBorderWidth:2,segment:{borderColor:NAIK}},
+      {label:'Tren 5 lari',data:ma(sp,5),borderColor:'#0A2457',borderDash:[7,5],pointRadius:0,borderWidth:2,tension:.35}]},
+      options:{animation:{duration:1200},interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{usePointStyle:true}},tooltip:{callbacks:{afterLabel:c=>c.datasetIndex?'':'pace '+fmtPace(60/c.parsed.y)+'/km'}}},scales:GRID}});
+  }else if(GRAF==='km'){
+    const runs=runsAll();if(!runs.length)return kosong('Belum ada data lari.');
+    const wk={};runs.forEach(r=>{const k=wkStart(r.tanggal);wk[k]=(wk[k]||0)+r.km});const ks=Object.keys(wk).sort(),v=ks.map(k=>+wk[k].toFixed(1));
+    ket('Total jarak lari per minggu (km), dihitung Senin sampai Minggu. Batang pucat berarti lebih sedikit dari minggu sebelumnya.');
+    mk('cG',{type:'bar',data:{labels:ks.map(fmtPendek),datasets:[{label:'km',data:v,borderRadius:8,backgroundColor:v.map((x,i)=>i&&x<v[i-1]?'#9DBFF5':'#1D5FE0')}]},
+      options:{animation:{duration:1000},plugins:{legend:{display:false}},scales:GRID}});
+  }else if(GRAF==='kuat'){
+    const L=D.latihan,ds=[...new Set(L.filter(l=>['pushup','situp','pullup'].includes(l.jenis)).map(l=>l.tanggal))].sort();
+    if(!ds.length)return kosong('Belum ada hasil tes push up, sit up, atau pull up.');
+    ket('Hasil tes 1 menit dari waktu ke waktu.');
+    const line=(j,n,c)=>({label:n,borderColor:c,backgroundColor:c,borderWidth:3,tension:.3,spanGaps:true,pointRadius:4,data:ds.map(t=>{const x=L.filter(l=>l.tanggal===t&&l.jenis===j).map(l=>l.nilai);return x.length?Math.max(...x):null})});
+    mk('cG',{type:'line',data:{labels:ds.map(fmtPendek),datasets:[line('pushup','Push up','#1D5FE0'),line('situp','Sit up','#5BB6FF'),line('pullup','Pull up','#0A2457')]},
+      options:{animation:{duration:1200},plugins:{legend:{labels:{usePointStyle:true}}},scales:GRID}});
+  }else{
+    const L=D.latihan,ds=[...new Set(L.filter(l=>l.jenis==='skd').map(l=>l.tanggal))].sort(),T=TG();
+    if(!ds.length)return kosong('Belum ada skor tryout SKD.');
+    const val=t=>{const x=L.filter(l=>l.tanggal===t&&l.jenis==='skd');return x.length?x[x.length-1].nilai:null};
+    ket('Skor total tryout SKD. Garis merah putus-putus adalah targetmu ('+T.skd+').');
+    mk('cG',{type:'line',data:{labels:ds.map(fmtPendek),datasets:[
+      {label:'Skor SKD',data:ds.map(val),borderColor:'#1D5FE0',backgroundColor:'#1D5FE0',borderWidth:3,tension:.3,spanGaps:true,pointRadius:5,segment:{borderColor:NAIK}},
+      {label:'Target '+T.skd,data:ds.map(()=>T.skd),borderColor:'#E5484D',borderDash:[6,5],borderWidth:1.5,pointRadius:0}]},
+      options:{animation:{duration:1200},plugins:{legend:{labels:{usePointStyle:true}}},scales:GRID}});
+  }
+}
+
 /* ---------- Tampilan ---------- */
 function render(){
   if(!USER)return;
   const left=P.tgl_tes?diffDays(today(),P.tgl_tes):null;
   $('cdn').textContent=left!=null&&left>0?'SKD '+left+' hari lagi':'RunUp';
-  if(TAB==='hari')renderHari();else if(TAB==='riw')renderRiwayat();else if(TAB==='skd')renderSkd();else renderPro();
+  if(TAB==='hari')renderHari();else if(TAB==='riw'){renderGrafik();renderRiwayat()}else if(TAB==='skd')renderSkd();else renderPro();
 }
 function goTab(t){
   if(!$('tab-'+t))t='hari';TAB=t;try{localStorage.setItem('tab2',t)}catch(e){}
