@@ -499,6 +499,7 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
 .nav-tgl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 12px}.nav-tgl .judul{margin:0;text-align:center;flex:1;font-size:21px}
 .pnh{flex:none;width:46px;height:46px;border-radius:50%;border:2px solid #D6E4FA;background:#fff;color:#1F4FB5;font:800 28px/1 system-ui;cursor:pointer;display:grid;place-items:center;padding-bottom:4px}
 .pnh:active{transform:scale(.94)}
+.stk b.tks{font:700 15px "Plus Jakarta Sans",system-ui,sans-serif;text-align:right;max-width:60%}
 
 </style>
 </head>
@@ -1764,7 +1765,7 @@ async function refresh(){
   render();
 }
 let SIAP=false;
-async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();await gantiProgram();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
+async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();await gantiProgram();await perbaikan20Nov();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER)stravaSinkron(false)})}}catch(e){toast(e.message)}}
 async function simpanTarget(ubah){
   const target={...(P.target||{}),...ubah};
@@ -1795,7 +1796,7 @@ const HASIL=[
   ['skd','SKD','poin',v=>v,'besar'],['lari12','Lari 12 menit','m',v=>v,'besar'],['pushup','Push up 1 menit','kali',v=>v,'besar'],
   ['situp','Sit up 1 menit','kali',v=>v,'besar'],['pullup','Pull up','kali',v=>v,'besar'],['shuttle','Shuttle run','detik',v=>String(v).replace('.',','),'kecil'],
   ['lari5k','Lari 5 km','',v=>fmtDur(v),'kecil']];
-function terbaik(k){const o=(P.target&&P.target.terbaik)||{};if(o[k]!=null&&o[k]!=='')return Number(o[k]);return k==='lari5k'?best5k():best(k)}
+function terbaik(k){const o=(P.target&&P.target.terbaik)||{};if(o[k]!=null&&o[k]!=='')return isNaN(o[k])?String(o[k]):Number(o[k]);return k==='lari5k'?best5k():best(k)}
 
 /* ---------- Program dari "Tempel program" ---------- */
 function program(){return (P.target&&P.target.program)||{}}
@@ -2002,7 +2003,7 @@ function renderPro(){
   const left=P.tgl_tes?diffDays(today(),P.tgl_tes):null;
   $('pCd').innerHTML=P.tgl_tes?(left>0?`<b>${left}</b><span>hari lagi menuju SKD<br>${fmtHari(P.tgl_tes)}</span>`:left===0?'<b>Hari ini</b><span>SKD. Semangat!</span>':`<b>✓</b><span>SKD sudah lewat (${fmtHari(P.tgl_tes)})</span>`):'<span>Tanggal SKD belum diisi.</span>';
   $('pTarget').innerHTML=HASIL.map(([k,n,u,fm])=>`<div class="stk"><span>${n}</span><b>${k==='lari5k'?'di bawah '+fmtDur(T[k]):k==='shuttle'?String(T[k]).replace('.',',')+' detik':fm(T[k])+(u?' '+u:'')}</b></div>`).join('');
-  $('pBest').innerHTML=HASIL.map(([k,n,u,fm,arah])=>{const v=terbaik(k),t=T[k],cap=v!=null&&(arah==='besar'?v>=t:v<=t);
+  $('pBest').innerHTML=HASIL.map(([k,n,u,fm,arah])=>{const v=terbaik(k),t=T[k];if(typeof v==='string')return `<div class="stk"><span>${n}</span><b class="tks">${esc(v.charAt(0).toUpperCase()+v.slice(1))}</b></div>`;const cap=v!=null&&(arah==='besar'?v>=t:v<=t);
     return `<div class="stk"><span>${n}</span><b class="${v==null?'':cap?'up':'dn'}">${v==null?'-':fm(v)+(u?' '+u:'')}${cap?' ✓':''}</b></div>`}).join('');
   $('pProg').innerHTML=ringkasProgram();
   renderStrava();
@@ -2042,12 +2043,12 @@ async function simpanTargetForm(){
 }
 function formTerbaik(){
   const o=(P.target&&P.target.terbaik)||{};
-  modal(`<h2>🏅 Hasil terbaik</h2><p class="sub">Isi untuk mengganti angka yang dihitung otomatis. Kosongkan supaya dihitung otomatis lagi dari datamu.</p>
-  ${HASIL.map(([k,n,u])=>{const v=k==='lari5k'?best5k():best(k);return `<label class="lbl">${n}${k==='lari5k'?' (menit, misal 23.5)':u?' ('+u+')':''}<input type="number" step="0.1" inputmode="decimal" id="tb_${k}" value="${o[k]!=null?o[k]:''}" placeholder="${v==null?'belum ada':'otomatis: '+(k==='lari5k'?Math.round(v*10)/10:v)}"></label>`}).join('')}
+  modal(`<h2>🏅 Hasil terbaik</h2><p class="sub">Isi untuk mengganti angka yang dihitung otomatis. Boleh berupa tulisan, misalnya "belum dites". Kosongkan supaya dihitung otomatis lagi dari datamu.</p>
+  ${HASIL.map(([k,n,u])=>{const v=k==='lari5k'?best5k():best(k);return `<label class="lbl">${n}${k==='lari5k'?' (menit, misal 23.5)':u?' ('+u+')':''}<input id="tb_${k}" value="${o[k]!=null?esc(String(o[k])):''}" placeholder="${v==null?'belum ada':'otomatis: '+(k==='lari5k'?Math.round(v*10)/10:v)}"></label>`}).join('')}
   <div class="row"><button class="btn" onclick="simpanTerbaik()">Simpan</button><button class="btn ghost" onclick="tutupModal()">Batal</button></div>`);
 }
 async function simpanTerbaik(){
-  const o={};HASIL.forEach(([k])=>{const v=$('tb_'+k).value.trim();if(v!==''&&Number(v)>0)o[k]=Number(v)});
+  const o={};HASIL.forEach(([k])=>{const v=$('tb_'+k).value.trim().replace(',','.');if(v==='')return;o[k]=!isNaN(v)&&Number(v)>0?Number(v):$('tb_'+k).value.trim()});
   try{await simpanTarget({terbaik:o})}catch(e){toast(e.message);return}tutupModal();render();toast('Hasil terbaik tersimpan ✓');
 }
 
@@ -2099,7 +2100,7 @@ async function stravaSinkron(manual){
     for(let i=0;i<rows.length;i+=100){const {data,error}=await db.from('lari').upsert(rows.slice(i,i+100),{onConflict:'user_id,strava_id',ignoreDuplicates:true}).select('id');if(error)throw error;n+=(data||[]).length}
     const maks=akt.reduce((m,a)=>Math.max(m,Date.parse(a.mulai_utc||a.mulai)/1000||0),0);
     await simpanStrava({...s,refresh:d.refresh_token||s.refresh,after:Math.max(s.after||0,maks?Math.floor(maks-3*86400):0),sinkron:new Date().toISOString()});
-    await refresh();
+    await refresh();await perbaikan20Nov();
     if(n||manual)toast(n?n+' lari baru dari Strava ✓':'Strava: tidak ada lari baru.');
   }catch(e){if(manual)toast('Sinkron Strava gagal: '+e.message)}
   finally{SINKRON=false;document.querySelectorAll('.stSync').forEach(b=>{b.disabled=false;if(b.dataset.l)b.textContent=b.dataset.l})}
@@ -2243,6 +2244,73 @@ async function gantiProgram(){
         if(n.id!==o.id&&!D.misi.some(m=>m.misi_id===n.id)){const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:o.misi.tanggal,misi_id:n.id,poin:10});if(error&&error.code!=='23505')throw error}}}
     await simpanTarget({[GANTI_ID]:true});await refresh();toast('Program 19–22 November sudah diganti ✓');
   }catch(e){console.warn('ganti program',e)}
+}
+
+
+/* ---------- Perbaikan data 20 Nov 2026 (sekali jalan per langkah, tanpa menghapus data) ---------- */
+const PB_ID='perbaikan20261120';
+const PB_PULL={'2026-11-23':'Pull up karet: 4x6, istirahat 2 menit; Pull up negatif: 3x3, turun pelan 5 detik; Dead hang: 3x20 detik','2026-11-27':'Pull up karet: 4x6, istirahat 2 menit; Pull up negatif: 3x3, turun pelan 5 detik; Dead hang: 3x20 detik',
+  '2026-11-30':'Pull up karet: 4x7, istirahat 2 menit; Pull up negatif: 3x4, turun pelan 5 detik; Dead hang: 3x20 detik','2026-12-04':'Pull up karet: 4x7, istirahat 2 menit; Pull up negatif: 3x4, turun pelan 5 detik; Dead hang: 3x20 detik',
+  '2026-12-07':'Pull up karet: 3x6, istirahat 2 menit; Pull up negatif: 2x3, turun pelan 5 detik; Dead hang: 2x20 detik','2026-12-11':'Pull up karet: 3x6, istirahat 2 menit; Pull up negatif: 2x3, turun pelan 5 detik; Dead hang: 2x20 detik'};
+const PB_PUSH={'2026-11-23':'Push up: 4x12','2026-11-27':'Push up: 3x15','2026-11-30':'Push up: 4x14','2026-12-04':'Push up: 3x17','2026-12-07':'Push up: 2x12','2026-12-11':'Tes push up: sebanyak-banyaknya dengan gerakan benar; Push up: 1x15'};
+const PB_DIPS=tg=>tg==='2026-12-04'?'Dips kursi: 3x12':(tg==='2026-12-07'||tg==='2026-12-11')?'Dips kursi: 2x10':tg.startsWith('2026-11')?'Dips kursi: 3x10':null;
+const PB_SHUTTLE='Tes shuttle run: 2 kali, istirahat 3 menit, catat yang tercepat';
+function ubahLangkah(d,tg,lap){
+  const ada=String(d||'').split(';').map(x=>x.trim()).filter(Boolean);let ub=false;
+  const out=ada.flatMap(x=>{
+    if(/^pull up\s*:/i.test(x)&&PB_PULL[tg]){ub=lap.pull[tg]=true;return PB_PULL[tg].split('; ')}
+    if(/^push up\s*:/i.test(x)&&PB_PUSH[tg]){ub=lap.push[tg]=true;return PB_PUSH[tg].split('; ')}
+    if(/^dips\s*:/i.test(x)){ub=true;lap.dips.add(tg);return [PB_DIPS(tg)||x.replace(/^dips\s*:/i,'Dips kursi:')]}
+    if(/^sit up\s*:/i.test(x)){ub=true;lap.sit.add(tg);return tg==='2026-11-23'?['Tes sit up: 1 menit sebanyak-banyaknya','Sit up: 3 set, masing-masing setengah hasil tes']:['Sit up: 3 set, masing-masing setengah hasil tes sit up terakhir']}
+    return [x];
+  });
+  return ub?out.join('; '):d;
+}
+async function perbaikan20Nov(){
+  if(TAMU||!USER||!stravaInfo())return;
+  const F={...((P.target&&P.target[PB_ID])||{})};let berubah=false;
+  try{
+    // 1. hasil terbaik
+    if(!F.terbaik){await simpanTarget({terbaik:{...((P.target&&P.target.terbaik)||{}),pullup:'0 (tanpa bantuan); 5 dengan karet',pushup:20,situp:'belum dites',shuttle:'belum dites',lari12:2500}});F.terbaik=1;berubah=true}
+    // 2a. 19 Nov: pagi bersepeda (pengganti jogging), sore kekuatan, keduanya tuntas
+    if(!F.h19){const prog={...program()},a=[...(prog['2026-11-19']||[])],iP=a.findIndex(x=>x.w==='Pagi'),iS=a.findIndex(x=>x.w==='Sore'&&x.j==='Kekuatan');
+      const pagi={w:'Pagi',j:'Lainnya',d:'Bersepeda: 14,2 km (dari Strava); Catatan: pengganti jogging'},sore={w:'Sore',j:'Kekuatan',d:'Squat: 3x15; Lunge: 3x5 per kaki; Naik-turun tangga: 10 menit'};
+      if(iP>=0)a[iP]=pagi;else a.unshift(pagi);if(iS>=0)a[iS]=sore;else a.push(sore);
+      prog['2026-11-19']=a;await simpanTarget({program:prog});
+      for(const x of sesiTgl('2026-11-19'))if(x.j!=='Istirahat'&&x.j!=='Lari'&&!D.misi.some(m=>m.misi_id===x.id)){const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:'2026-11-19',misi_id:x.id,poin:10});if(error&&error.code!=='23505')throw error;D.misi.push({misi_id:x.id,tanggal:'2026-11-19'})}
+      F.h19=1;berubah=true}
+    // 2c. 20 Nov sore: isi yang dikerjakan dan tuntas
+    if(!F.h20s){const prog={...program()},a=[...(prog['2026-11-20']||[])],i=a.findIndex(x=>x.w==='Sore'&&x.j==='Kekuatan'),sore={w:'Sore',j:'Kekuatan',d:'Pull up karet: 4x5; Push up: 20, 20, lalu 10+5; Plank samping: 2x30 detik per sisi'};
+      if(i>=0)a[i]=sore;else a.push(sore);prog['2026-11-20']=a;await simpanTarget({program:prog});
+      const x=sesiTgl('2026-11-20').find(y=>y.w==='Sore'&&y.j==='Kekuatan');
+      if(x&&!D.misi.some(m=>m.misi_id===x.id)){const {error}=await db.from('misi').insert({user_id:USER.id,tanggal:'2026-11-20',misi_id:x.id,poin:10});if(error&&error.code!=='23505')throw error}
+      F.h20s=1;berubah=true}
+    // 2b. 20 Nov pagi: koreksi jarak GPS (menunggu data Strava masuk)
+    if(!F.h20p){const r=D.lari.find(x=>x.tanggal==='2026-11-20'&&x.strava_id&&Number(x.km)>=3.5&&Number(x.km)<=3.9);
+      if(r){const cat=[r.catatan,'GPS error, jarak dikoreksi manual (dari 3,69 km)'].filter(Boolean).join(' · ');
+        const {error}=await db.from('lari').update({km:3.1,menit:15.03,catatan:cat}).eq('id',r.id);if(error)throw error;F.h20p=1;berubah=true}
+      else if(D.lari.some(x=>x.tanggal==='2026-11-20'&&Math.abs(Number(x.km)-3.1)<.01)){F.h20p=1;berubah=true}}
+    // 3-7. program 21 Nov sampai seterusnya
+    if(!F.prog){const prog={...program()},lap={pull:{},push:{},dips:new Set(),sit:new Set()};
+      Object.keys(prog).filter(t=>t>='2026-11-21').forEach(t=>{prog[t]=prog[t].map(x=>({...x,d:ubahLangkah(x.d,t,lap)}))});
+      const a30=prog['2026-11-30'];let shuttle=false;
+      if(a30&&a30.length){const i=Math.max(0,a30.findIndex(x=>x.w==='Pagi'));a30[i]={...a30[i],d:[String(a30[i].d||'').trim().replace(/;\s*$/,''),PB_SHUTTLE].filter(Boolean).join('; ')};shuttle=true}
+      await simpanTarget({program:prog});
+      F.lap={pull:Object.keys(PB_PULL).filter(t=>!lap.pull[t]),push:Object.keys(PB_PUSH).filter(t=>!lap.push[t]),dips:[...lap.dips].length,sit:[...lap.sit].length,shuttle};
+      F.prog=1;berubah=true}
+    if(berubah){await simpanTarget({[PB_ID]:F});await refresh();
+      if(F.prog&&!F.dilapor){F.dilapor=1;await simpanTarget({[PB_ID]:F});laporPerbaikan(F)}}
+  }catch(e){console.warn('perbaikan',e)}
+}
+function laporPerbaikan(F){
+  const L=F.lap||{},tg=a=>a.map(fmtPendek).join(', ');
+  modal(`<h2>✅ Data dan program diperbarui</h2>
+  <p class="sub">Hasil terbaik, riwayat 19 dan 20 November, dan program mulai 23 November sudah diganti sesuai permintaanmu.</p>
+  ${L.pull&&L.pull.length?`<p class="msg err">Bagian "Pull up" tidak ditemukan di program ${tg(L.pull)}, jadi tanggal itu tidak berubah.</p>`:''}
+  ${L.push&&L.push.length?`<p class="msg err">Bagian "Push up" tidak ditemukan di program ${tg(L.push)}, jadi tanggal itu tidak berubah.</p>`:''}
+  ${L.shuttle===false?'<p class="msg err">Belum ada program 30 November, jadi tes shuttle run belum ditambahkan.</p>':''}
+  ${F.h20p?'':'<p class="msg">Koreksi jarak 20 November otomatis dikerjakan setelah lari itu masuk dari Strava.</p>'}
+  <div class="row"><button class="btn" onclick="tutupModal();HTGL='2026-11-23';goTab('hari')">Lihat program 23 November</button><button class="btn ghost" onclick="tutupModal()">Tutup</button></div>`);
 }
 
 /* ---------- Tampilan ---------- */
