@@ -496,6 +496,9 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
 .ri-s.done{opacity:.75}.ri-s .lk{gap:8px;margin:8px 0 4px}.ri-s .lk li{font-size:15px}.ri-s .lk .no{width:24px;height:24px;font-size:12px}
 .ri-s .ses-d{font-size:15px;margin:4px 0}.ri-s .wkt{font-size:12px;padding:1px 8px}
 .ri-b .lk-t b{display:inline;font-size:inherit}.ri-b .wkt{display:inline-block;vertical-align:middle}
+.nav-tgl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 12px}.nav-tgl .judul{margin:0;text-align:center;flex:1;font-size:21px}
+.pnh{flex:none;width:46px;height:46px;border-radius:50%;border:2px solid #D6E4FA;background:#fff;color:#1F4FB5;font:800 28px/1 system-ui;cursor:pointer;display:grid;place-items:center;padding-bottom:4px}
+.pnh:active{transform:scale(.94)}
 
 </style>
 </head>
@@ -597,7 +600,8 @@ textarea.prg{font:15px/1.5 ui-monospace,Menlo,Consolas,monospace;min-height:220p
 <main class="main main2">
   <!-- HARI INI -->
   <section class="tab" id="tab-hari">
-    <h2 class="judul" id="hTgl">Hari ini</h2>
+    <div class="nav-tgl"><button class="pnh" onclick="geserHari(-1)" aria-label="Hari sebelumnya">‹</button><h2 class="judul" id="hTgl">Hari ini</h2><button class="pnh" onclick="geserHari(1)" aria-label="Hari berikutnya">›</button></div>
+    <div class="row" id="hKembali" style="justify-content:center;margin:-4px 0 12px;display:none"><button class="btn ghost sm" onclick="geserHari(0)">Hari ini</button></div>
     <div id="hSesi"></div>
   </section>
 
@@ -1885,7 +1889,8 @@ function tombolSesi(s,diRiwayat){
   if(s.j==='Lari'){
     if(s.run)return infoLari(s.run);
     if(diRiwayat)return masihBisaIsi(s.tg)?`<button class="btn ghost sm" onclick="formLari('${s.tg}')">+ Catat lari</button>`:'';
-    return `<div class="ses-a"><span class="abu">Belum ada lari di Strava hari ini</span>${stravaInfo()?'<button class="btn ghost stSync" onclick="stravaSinkron(true)">🔄 Sinkron Strava</button>':'<button class="btn ghost" onclick="goTab(\'pro\')">Hubungkan Strava</button>'}</div>`;
+    if(s.tg>today())return '';
+    return `<div class="ses-a"><span class="abu">Belum ada lari di Strava ${s.tg===today()?'hari ini':'di tanggal ini'}</span>${stravaInfo()?'<button class="btn ghost stSync" onclick="stravaSinkron(true)">🔄 Sinkron Strava</button>':'<button class="btn ghost" onclick="goTab(\'pro\')">Hubungkan Strava</button>'}</div>`;
   }
   if(s.done)return `<div class="ses-a"><span class="hijau">✅ Selesai${belakangan(s)?' <small class="lt">diisi belakangan</small>':''}</span>${masihBisaIsi(s.tg)?`<button class="btn ghost sm" onclick="batalSelesai('${s.id}','${s.tg}')">Batalkan</button>`:''}</div>`;
   if(!masihBisaIsi(s.tg))return '';
@@ -1904,10 +1909,12 @@ function kartuSesi(s){
   return `<div class="ses ${JK[s.j]}${tuntas?' done':''}"><div class="ses-h"><span class="ses-ik">${IK[s.j]}</span><div><span class="wkt">${s.w==='-'?'Bebas':s.w}</span><b>${s.j}</b></div>${tuntas?'<em class="cek">✓</em>':''}</div>
   ${detailHtml(s.d)}${tombolSesi(s,false)}</div>`;
 }
+let HTGL=null;
+function geserHari(n){HTGL=n?addDays(HTGL||today(),n):null;if(HTGL===today())HTGL=null;renderHari();scrollTo(0,0)}
 function renderHari(){
-  const t0=today(),ss=statusSesi(t0);
-  $('hTgl').textContent=fmtHari(t0);
-  let h=ss.length?ss.map(kartuSesi).join(''):`<div class="kosong">Belum ada program untuk hari ini.<br><button class="btn ghost" onclick="goTab('pro')">Tempel program di Profil</button></div>`;
+  const t0=HTGL||today(),ss=statusSesi(t0);
+  $('hTgl').textContent=fmtHari(t0);$('hKembali').style.display=HTGL?'flex':'none';
+  let h=ss.length?ss.map(kartuSesi).join(''):`<div class="kosong">Belum ada program untuk ${HTGL?'tanggal ini':'hari ini'}.<br><button class="btn ghost" onclick="goTab('pro')">Tempel program di Profil</button></div>`;
   const ekstra=lariTgl(t0).slice(ss.filter(s=>s.j==='Lari').length);
   h+=ekstra.map(r=>`<div class="ses done"><div class="ses-h"><span class="ses-ik">🏃</span><div><small>Di luar program</small><b>Lari</b></div></div>${infoLari(r)}</div>`).join('');
   $('hSesi').innerHTML=h;
