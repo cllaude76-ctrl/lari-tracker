@@ -1765,7 +1765,7 @@ async function refresh(){
   render();
 }
 let SIAP=false;
-async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();await gantiProgram();await perbaikan20Nov();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
+async function load(){try{await refresh();if(!SIAP){SIAP=true;await pasangTargetV3();await catatTitipan();await gantiProgram();await perbaikan20Nov();await koreksiLari();stravaCekKembali().then(k=>{if(!k)stravaSinkron(false)}).catch(()=>{});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&USER)stravaSinkron(false)})}}catch(e){toast(e.message)}}
 async function simpanTarget(ubah){
   const target={...(P.target||{}),...ubah};
@@ -2100,7 +2100,7 @@ async function stravaSinkron(manual){
     for(let i=0;i<rows.length;i+=100){const {data,error}=await db.from('lari').upsert(rows.slice(i,i+100),{onConflict:'user_id,strava_id',ignoreDuplicates:true}).select('id');if(error)throw error;n+=(data||[]).length}
     const maks=akt.reduce((m,a)=>Math.max(m,Date.parse(a.mulai_utc||a.mulai)/1000||0),0);
     await simpanStrava({...s,refresh:d.refresh_token||s.refresh,after:Math.max(s.after||0,maks?Math.floor(maks-3*86400):0),sinkron:new Date().toISOString()});
-    await refresh();await perbaikan20Nov();
+    await refresh();await perbaikan20Nov();await koreksiLari();
     if(n||manual)toast(n?n+' lari baru dari Strava ✓':'Strava: tidak ada lari baru.');
   }catch(e){if(manual)toast('Sinkron Strava gagal: '+e.message)}
   finally{SINKRON=false;document.querySelectorAll('.stSync').forEach(b=>{b.disabled=false;if(b.dataset.l)b.textContent=b.dataset.l})}
@@ -2311,6 +2311,18 @@ function laporPerbaikan(F){
   ${L.shuttle===false?'<p class="msg err">Belum ada program 30 November, jadi tes shuttle run belum ditambahkan.</p>':''}
   ${F.h20p?'':'<p class="msg">Koreksi jarak 20 November otomatis dikerjakan setelah lari itu masuk dari Strava.</p>'}
   <div class="row"><button class="btn" onclick="tutupModal();HTGL='2026-11-23';goTab('hari')">Lihat program 23 November</button><button class="btn ghost" onclick="tutupModal()">Tutup</button></div>`);
+}
+
+
+/* ---------- Koreksi lari Strava yang terpotong (sekali per aktivitas) ---------- */
+const KOREKSI=[{sid:'21068748871',km:12,menit:69.8,cat:'HP mati di km 10. Total 12 km (16.12–17.25); 2 km terakhir ditambah manual, perkiraan pace 5:30/km.'}];
+async function koreksiLari(){
+  if(TAMU||!USER||!stravaInfo())return;
+  const F={...((P.target&&P.target.koreksi)||{})};let ubah=false;
+  for(const k of KOREKSI){if(F[k.sid])continue;const r=D.lari.find(x=>String(x.strava_id)===k.sid);if(!r)continue;
+    const {error}=await db.from('lari').update({km:k.km,menit:k.menit,catatan:[r.catatan,k.cat].filter(Boolean).join(' · ')}).eq('id',r.id);
+    if(error){console.warn(error);continue}F[k.sid]=1;ubah=true}
+  if(ubah){await simpanTarget({koreksi:F});await refresh()}
 }
 
 /* ---------- Tampilan ---------- */
